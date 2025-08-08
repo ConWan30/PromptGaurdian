@@ -1,5 +1,6 @@
 [build]
 builder = "nixpacks"
+buildCommand = "npm install && cd railway-backend && npm install"
 
 [deploy]
 startCommand = "cd railway-backend && npm start"

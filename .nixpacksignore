@@ -1,0 +1,13 @@
+# Browser extension files (not needed for backend)
+src/
+assets/
+manifest.json
+webpack.config.js
+
+# Development files
+docs/
+tests/
+*.md
+README.md
+
+# Only include railway-backend for deployment
