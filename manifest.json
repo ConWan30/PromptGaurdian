@@ -1,0 +1,70 @@
+{
+  "manifest_version": 3,
+  "name": "PromptGuardian",
+  "version": "1.0.0",
+  "description": "Real-time AI prompt threat detection with SocialShield monitoring for X (Twitter)",
+  
+  "permissions": [
+    "activeTab",
+    "storage",
+    "background",
+    "scripting"
+  ],
+  
+  "host_permissions": [
+    "https://chat.openai.com/*",
+    "https://claude.ai/*",
+    "https://bard.google.com/*",
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "https://api.x.ai/*",
+    "https://api.search.brave.com/*"
+  ],
+  
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chat.openai.com/*",
+        "https://claude.ai/*",
+        "https://bard.google.com/*"
+      ],
+      "js": ["src/content/prompt-guardian.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "js": ["src/content/social-shield.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "PromptGuardian Settings"
+  },
+  
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "32": "assets/icons/icon-32.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  },
+  
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/agents/*.js",
+        "src/utils/*.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
