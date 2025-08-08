@@ -2,14 +2,11 @@
 src/
 assets/
 manifest.json
-webpack.config.js
 
 # Development files
 .git/
-.gitignore
 docs/
 tests/
-*.md
 
 # Node modules (will be installed during build)
 node_modules/

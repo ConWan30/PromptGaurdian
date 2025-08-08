@@ -2,7 +2,7 @@
   "name": "promptguardian",
   "version": "1.0.0",
   "description": "Real-time AI prompt threat detection with SocialShield monitoring",
-  "main": "src/background/service-worker.js",
+  "main": "railway-backend/src/server.js",
   "scripts": {
     "build": "webpack --mode=production",
     "dev": "webpack --mode=development --watch",
