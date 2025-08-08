@@ -1,0 +1,21 @@
+# Browser extension files (not needed for backend)
+src/
+assets/
+manifest.json
+webpack.config.js
+
+# Development files
+.git/
+.gitignore
+docs/
+tests/
+*.md
+
+# Node modules (will be installed during build)
+node_modules/
+railway-backend/node_modules/
+
+# Cache and logs
+.cache/
+*.log
+.env.local
