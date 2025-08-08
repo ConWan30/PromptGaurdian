@@ -2,6 +2,8 @@
 
 A pioneering browser extension that detects threatening, harmful, or critical prompt threats in real-time while users type into AI interfaces, enhanced with **SocialShield** module for X (Twitter) social media threat monitoring.
 
+PromptGuardian is a unique browser extension detecting harmful AI prompts & X threats in real-time. Using xAI's Grok & Brave Search APIs, its agents catch spam & steganography via SecurePromptMesh. Railway scales it. Offers alerts & suggestions—a novel AI security tool.
+
 ## Features
 
 ### Core PromptGuardian
