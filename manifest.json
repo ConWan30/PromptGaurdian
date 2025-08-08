@@ -8,7 +8,10 @@
     "activeTab",
     "storage",
     "background",
-    "scripting"
+    "scripting",
+    "tabs",
+    "webNavigation",
+    "notifications"
   ],
   
   "host_permissions": [
@@ -18,7 +21,8 @@
     "https://x.com/*",
     "https://twitter.com/*",
     "https://api.x.ai/*",
-    "https://api.search.brave.com/*"
+    "https://api.search.brave.com/*",
+    "https://promptgaurdian-production.up.railway.app/*"
   ],
   
   "background": {

@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptGuardian</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="pg-container">
+        <!-- Header -->
+        <header class="pg-header">
+            <div class="pg-logo">
+                <img src="../../assets/icons/icon-48.png" alt="PromptGuardian" class="pg-logo-icon">
+                <div class="pg-logo-text">
+                    <h1>PromptGuardian</h1>
+                    <span class="pg-version">v1.0.0</span>
+                </div>
+            </div>
+            <div class="pg-status-indicator" id="systemStatus">
+                <div class="pg-status-dot"></div>
+                <span class="pg-status-text">Initializing...</span>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="pg-nav">
+            <button class="pg-nav-btn active" data-tab="dashboard">
+                <span class="pg-nav-icon">📊</span>
+                Dashboard
+            </button>
+            <button class="pg-nav-btn" data-tab="threats">
+                <span class="pg-nav-icon">🛡️</span>
+                Threats
+            </button>
+            <button class="pg-nav-btn" data-tab="social">
+                <span class="pg-nav-icon">🌐</span>
+                SocialShield
+            </button>
+            <button class="pg-nav-btn" data-tab="settings">
+                <span class="pg-nav-icon">⚙️</span>
+                Settings
+            </button>
+        </nav>
+
+        <!-- Dashboard Tab -->
+        <div class="pg-tab-content active" id="dashboard">
+            <!-- System Overview -->
+            <section class="pg-section">
+                <h2 class="pg-section-title">System Overview</h2>
+                <div class="pg-overview-grid">
+                    <div class="pg-metric-card">
+                        <div class="pg-metric-icon">🔍</div>
+                        <div class="pg-metric-content">
+                            <div class="pg-metric-value" id="threatsDetected">0</div>
+                            <div class="pg-metric-label">Threats Detected</div>
+                        </div>
+                    </div>
+                    <div class="pg-metric-card">
+                        <div class="pg-metric-icon">⚡</div>
+                        <div class="pg-metric-content">
+                            <div class="pg-metric-value" id="agentsActive">0</div>
+                            <div class="pg-metric-label">Agents Active</div>
+                        </div>
+                    </div>
+                    <div class="pg-metric-card">
+                        <div class="pg-metric-icon">🌐</div>
+                        <div class="pg-metric-content">
+                            <div class="pg-metric-value" id="socialPostsScanned">0</div>
+                            <div class="pg-metric-label">Posts Scanned</div>
+                        </div>
+                    </div>
+                    <div class="pg-metric-card">
+                        <div class="pg-metric-icon">🤖</div>
+                        <div class="pg-metric-content">
+                            <div class="pg-metric-value" id="apiCallsToday">0</div>
+                            <div class="pg-metric-label">API Calls Today</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Real-time Activity -->
+            <section class="pg-section">
+                <h2 class="pg-section-title">Real-time Activity</h2>
+                <div class="pg-activity-feed" id="activityFeed">
+                    <div class="pg-activity-item loading">
+                        <div class="pg-activity-icon">⏳</div>
+                        <div class="pg-activity-content">
+                            <div class="pg-activity-title">Loading activity feed...</div>
+                            <div class="pg-activity-time">Just now</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Agent Status -->
+            <section class="pg-section">
+                <h2 class="pg-section-title">Agent Status</h2>
+                <div class="pg-agents-grid" id="agentsStatus">
+                    <!-- Agents will be dynamically populated -->
+                </div>
+            </section>
+
+            <!-- API Integration Status -->
+            <section class="pg-section">
+                <h2 class="pg-section-title">API Integration</h2>
+                <div class="pg-api-status">
+                    <div class="pg-api-item" id="grokStatus">
+                        <div class="pg-api-icon">🤖</div>
+                        <div class="pg-api-content">
+                            <div class="pg-api-name">xAI Grok</div>
+                            <div class="pg-api-status-text">Checking...</div>
+                        </div>
+                        <div class="pg-api-indicator"></div>
+                    </div>
+                    <div class="pg-api-item" id="braveStatus">
+                        <div class="pg-api-icon">🔍</div>
+                        <div class="pg-api-content">
+                            <div class="pg-api-name">Brave Search</div>
+                            <div class="pg-api-status-text">Checking...</div>
+                        </div>
+                        <div class="pg-api-indicator"></div>
+                    </div>
+                    <div class="pg-api-item" id="railwayStatus">
+                        <div class="pg-api-icon">🚂</div>
+                        <div class="pg-api-content">
+                            <div class="pg-api-name">Railway Backend</div>
+                            <div class="pg-api-status-text">Checking...</div>
+                        </div>
+                        <div class="pg-api-indicator"></div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Threats Tab -->
+        <div class="pg-tab-content" id="threats">
+            <section class="pg-section">
+                <div class="pg-section-header">
+                    <h2 class="pg-section-title">Threat Analysis</h2>
+                    <button class="pg-btn pg-btn-secondary" id="refreshThreats">
+                        <span class="pg-btn-icon">🔄</span>
+                        Refresh
+                    </button>
+                </div>
+
+                <!-- Threat Statistics -->
+                <div class="pg-threat-stats">
+                    <div class="pg-stat-card critical">
+                        <div class="pg-stat-value" id="criticalThreats">0</div>
+                        <div class="pg-stat-label">Critical</div>
+                    </div>
+                    <div class="pg-stat-card high">
+                        <div class="pg-stat-value" id="highThreats">0</div>
+                        <div class="pg-stat-label">High</div>
+                    </div>
+                    <div class="pg-stat-card medium">
+                        <div class="pg-stat-value" id="mediumThreats">0</div>
+                        <div class="pg-stat-label">Medium</div>
+                    </div>
+                    <div class="pg-stat-card low">
+                        <div class="pg-stat-value" id="lowThreats">0</div>
+                        <div class="pg-stat-label">Low</div>
+                    </div>
+                </div>
+
+                <!-- Threat Types Chart -->
+                <div class="pg-chart-container">
+                    <h3>Threat Types Distribution</h3>
+                    <canvas id="threatTypesChart" width="400" height="200"></canvas>
+                </div>
+
+                <!-- Recent Threats -->
+                <div class="pg-threats-list">
+                    <h3>Recent Threats</h3>
+                    <div class="pg-threat-items" id="recentThreats">
+                        <!-- Threats will be dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Threat Intelligence -->
+                <div class="pg-intel-section">
+                    <h3>Threat Intelligence</h3>
+                    <div class="pg-intel-grid">
+                        <div class="pg-intel-card">
+                            <div class="pg-intel-title">Community Reports</div>
+                            <div class="pg-intel-value" id="communityReports">Loading...</div>
+                        </div>
+                        <div class="pg-intel-card">
+                            <div class="pg-intel-title">Global Patterns</div>
+                            <div class="pg-intel-value" id="globalPatterns">Loading...</div>
+                        </div>
+                        <div class="pg-intel-card">
+                            <div class="pg-intel-title">Detection Accuracy</div>
+                            <div class="pg-intel-value" id="detectionAccuracy">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- SocialShield Tab -->
+        <div class="pg-tab-content" id="social">
+            <section class="pg-section">
+                <div class="pg-section-header">
+                    <h2 class="pg-section-title">SocialShield Monitor</h2>
+                    <div class="pg-toggle-switch">
+                        <input type="checkbox" id="socialShieldToggle" checked>
+                        <label for="socialShieldToggle" class="pg-switch">
+                            <span class="pg-switch-slider"></span>
+                        </label>
+                        <span class="pg-toggle-label">Active</span>
+                    </div>
+                </div>
+
+                <!-- Social Platform Status -->
+                <div class="pg-social-platforms">
+                    <div class="pg-platform-card active" data-platform="x">
+                        <div class="pg-platform-icon">𝕏</div>
+                        <div class="pg-platform-name">X (Twitter)</div>
+                        <div class="pg-platform-status">Monitoring</div>
+                    </div>
+                    <div class="pg-platform-card inactive" data-platform="facebook">
+                        <div class="pg-platform-icon">📘</div>
+                        <div class="pg-platform-name">Facebook</div>
+                        <div class="pg-platform-status">Available</div>
+                    </div>
+                    <div class="pg-platform-card inactive" data-platform="instagram">
+                        <div class="pg-platform-icon">📷</div>
+                        <div class="pg-platform-name">Instagram</div>
+                        <div class="pg-platform-status">Coming Soon</div>
+                    </div>
+                </div>
+
+                <!-- Social Threat Categories -->
+                <div class="pg-social-categories">
+                    <h3>Threat Detection Categories</h3>
+                    <div class="pg-category-list">
+                        <div class="pg-category-item">
+                            <div class="pg-category-icon">🚨</div>
+                            <div class="pg-category-content">
+                                <div class="pg-category-name">Spam Detection</div>
+                                <div class="pg-category-desc">Identifies promotional spam and bot activity</div>
+                            </div>
+                            <div class="pg-category-toggle">
+                                <input type="checkbox" id="spamDetection" checked>
+                                <label for="spamDetection" class="pg-mini-switch"></label>
+                            </div>
+                        </div>
+                        <div class="pg-category-item">
+                            <div class="pg-category-icon">🎣</div>
+                            <div class="pg-category-content">
+                                <div class="pg-category-name">Phishing Detection</div>
+                                <div class="pg-category-desc">Detects fraudulent links and scam attempts</div>
+                            </div>
+                            <div class="pg-category-toggle">
+                                <input type="checkbox" id="phishingDetection" checked>
+                                <label for="phishingDetection" class="pg-mini-switch"></label>
+                            </div>
+                        </div>
+                        <div class="pg-category-item">
+                            <div class="pg-category-icon">🔍</div>
+                            <div class="pg-category-content">
+                                <div class="pg-category-name">Steganography Detection</div>
+                                <div class="pg-category-desc">Analyzes images/videos for hidden content</div>
+                            </div>
+                            <div class="pg-category-toggle">
+                                <input type="checkbox" id="steganographyDetection" checked>
+                                <label for="steganographyDetection" class="pg-mini-switch"></label>
+                            </div>
+                        </div>
+                        <div class="pg-category-item">
+                            <div class="pg-category-icon">❗</div>
+                            <div class="pg-category-content">
+                                <div class="pg-category-name">Misinformation Detection</div>
+                                <div class="pg-category-desc">Identifies potentially false or misleading information</div>
+                            </div>
+                            <div class="pg-category-toggle">
+                                <input type="checkbox" id="misinformationDetection" checked>
+                                <label for="misinformationDetection" class="pg-mini-switch"></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Social Detections -->
+                <div class="pg-social-detections">
+                    <h3>Recent Detections</h3>
+                    <div class="pg-detection-list" id="socialDetections">
+                        <!-- Detections will be dynamically populated -->
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Settings Tab -->
+        <div class="pg-tab-content" id="settings">
+            <section class="pg-section">
+                <h2 class="pg-section-title">Settings</h2>
+
+                <!-- API Configuration -->
+                <div class="pg-settings-group">
+                    <h3>API Configuration</h3>
+                    <div class="pg-setting-item">
+                        <label for="grokApiKey" class="pg-setting-label">
+                            xAI Grok API Key
+                            <span class="pg-setting-optional">Optional - uses Railway proxy if empty</span>
+                        </label>
+                        <div class="pg-input-group">
+                            <input type="password" id="grokApiKey" class="pg-input" placeholder="Enter your Grok API key">
+                            <button class="pg-btn pg-btn-icon" id="toggleGrokKey" title="Show/Hide">👁️</button>
+                        </div>
+                        <div class="pg-setting-help">
+                            Get your API key from <a href="https://x.ai/api" target="_blank">x.ai/api</a>
+                        </div>
+                    </div>
+                    <div class="pg-setting-item">
+                        <label for="braveApiKey" class="pg-setting-label">
+                            Brave Search API Key
+                            <span class="pg-setting-optional">Optional - uses Railway proxy if empty</span>
+                        </label>
+                        <div class="pg-input-group">
+                            <input type="password" id="braveApiKey" class="pg-input" placeholder="Enter your Brave API key">
+                            <button class="pg-btn pg-btn-icon" id="toggleBraveKey" title="Show/Hide">👁️</button>
+                        </div>
+                        <div class="pg-setting-help">
+                            Get your API key from <a href="https://api.search.brave.com/" target="_blank">Brave Search API</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detection Settings -->
+                <div class="pg-settings-group">
+                    <h3>Detection Settings</h3>
+                    <div class="pg-setting-item">
+                        <label class="pg-setting-label">Monitoring Mode</label>
+                        <select id="monitoringMode" class="pg-select">
+                            <option value="conservative">Conservative - Lower false positives</option>
+                            <option value="balanced">Balanced - Recommended</option>
+                            <option value="aggressive">Aggressive - Higher sensitivity</option>
+                        </select>
+                    </div>
+                    <div class="pg-setting-item">
+                        <label class="pg-setting-label">Threat Threshold</label>
+                        <div class="pg-slider-container">
+                            <input type="range" id="threatThreshold" class="pg-slider" min="0.1" max="1.0" step="0.1" value="0.5">
+                            <div class="pg-slider-labels">
+                                <span>Low</span>
+                                <span class="pg-slider-value" id="thresholdValue">50%</span>
+                                <span>High</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pg-setting-item">
+                        <div class="pg-checkbox-group">
+                            <input type="checkbox" id="enableNotifications" checked>
+                            <label for="enableNotifications">Enable desktop notifications</label>
+                        </div>
+                    </div>
+                    <div class="pg-setting-item">
+                        <div class="pg-checkbox-group">
+                            <input type="checkbox" id="enableSounds" >
+                            <label for="enableSounds">Enable audio alerts</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Privacy Settings -->
+                <div class="pg-settings-group">
+                    <h3>Privacy & Data</h3>
+                    <div class="pg-setting-item">
+                        <div class="pg-checkbox-group">
+                            <input type="checkbox" id="enableAnalytics" checked>
+                            <label for="enableAnalytics">
+                                Share anonymous usage data
+                                <span class="pg-help-icon" title="Helps improve threat detection accuracy">ⓘ</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="pg-setting-item">
+                        <button class="pg-btn pg-btn-danger" id="clearData">Clear All Data</button>
+                        <div class="pg-setting-help">This will remove all cached data, settings, and logs</div>
+                    </div>
+                </div>
+
+                <!-- Advanced Settings -->
+                <div class="pg-settings-group">
+                    <h3>Advanced</h3>
+                    <div class="pg-setting-item">
+                        <label for="railwayEndpoint" class="pg-setting-label">Railway Backend URL</label>
+                        <input type="url" id="railwayEndpoint" class="pg-input" value="https://promptgaurdian-production.up.railway.app">
+                    </div>
+                    <div class="pg-setting-item">
+                        <button class="pg-btn pg-btn-secondary" id="testConnections">Test All Connections</button>
+                    </div>
+                    <div class="pg-setting-item">
+                        <button class="pg-btn pg-btn-secondary" id="exportLogs">Export Logs</button>
+                        <button class="pg-btn pg-btn-secondary" id="importSettings">Import Settings</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer -->
+        <footer class="pg-footer">
+            <div class="pg-footer-content">
+                <div class="pg-footer-info">
+                    <span>PromptGuardian v1.0.0</span>
+                    <span>•</span>
+                    <span id="lastUpdate">Last updated: Never</span>
+                </div>
+                <div class="pg-footer-links">
+                    <a href="#" id="showHelp">Help</a>
+                    <a href="https://github.com/ConWan30/PromptGaurdian" target="_blank">GitHub</a>
+                    <a href="#" id="showAbout">About</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="pg-loading-overlay" id="loadingOverlay">
+        <div class="pg-spinner"></div>
+        <div class="pg-loading-text">Initializing PromptGuardian...</div>
+    </div>
+
+    <!-- Modals -->
+    <div class="pg-modal" id="helpModal">
+        <div class="pg-modal-backdrop"></div>
+        <div class="pg-modal-content">
+            <div class="pg-modal-header">
+                <h3>PromptGuardian Help</h3>
+                <button class="pg-modal-close">×</button>
+            </div>
+            <div class="pg-modal-body">
+                <h4>Getting Started</h4>
+                <p>PromptGuardian protects you from AI prompt injection attacks and social media threats.</p>
+                
+                <h4>Features</h4>
+                <ul>
+                    <li><strong>Prompt Protection:</strong> Real-time analysis of AI chat inputs</li>
+                    <li><strong>SocialShield:</strong> X (Twitter) threat monitoring</li>
+                    <li><strong>Threat Intelligence:</strong> Community-powered detection</li>
+                    <li><strong>API Integration:</strong> xAI Grok and Brave Search</li>
+                </ul>
+                
+                <h4>Keyboard Shortcuts</h4>
+                <ul>
+                    <li><kbd>Ctrl+Shift+P</kbd> - Toggle PromptGuardian</li>
+                    <li><kbd>Ctrl+Shift+S</kbd> - Toggle SocialShield</li>
+                    <li><kbd>Ctrl+Shift+C</kbd> - Clear warnings</li>
+                    <li><kbd>Escape</kbd> - Dismiss latest warning</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="pg-modal" id="aboutModal">
+        <div class="pg-modal-backdrop"></div>
+        <div class="pg-modal-content">
+            <div class="pg-modal-header">
+                <h3>About PromptGuardian</h3>
+                <button class="pg-modal-close">×</button>
+            </div>
+            <div class="pg-modal-body">
+                <div class="pg-about-content">
+                    <div class="pg-about-logo">
+                        <img src="../../assets/icons/icon-128.png" alt="PromptGuardian">
+                        <h4>PromptGuardian v1.0.0</h4>
+                    </div>
+                    <p>A pioneering browser extension that detects threatening, harmful, or critical prompt threats in real-time, enhanced with SocialShield for social media monitoring.</p>
+                    
+                    <h4>Technology Stack</h4>
+                    <ul>
+                        <li>8 AI Agents with SPM Protocol</li>
+                        <li>xAI Grok API Integration</li>
+                        <li>Brave Search API & Dynamic Goggles</li>
+                        <li>Railway Backend for Scalability</li>
+                        <li>Real-time Threat Intelligence</li>
+                    </ul>
+                    
+                    <div class="pg-about-credits">
+                        <p>Developed by ConWan30</p>
+                        <p>🤖 Enhanced with Claude Code</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
