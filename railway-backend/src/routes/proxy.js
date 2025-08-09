@@ -393,7 +393,7 @@ CRITICAL INSTRUCTIONS:
 RESPOND WITH VALID JSON ONLY.`;
 
             const response = await axios.post(`${API_ENDPOINTS.grok.base}/chat/completions`, {
-              model: 'grok-2-1212',
+              model: 'grok-2',
               messages: [
                 {
                   role: 'system',
