@@ -5,6 +5,11 @@
 
 console.log('[SocialShield] 🛡️ X/Twitter Security Monitor Loading...');
 
+// Prevent multiple class declarations
+if (typeof window.SocialShieldContent !== 'undefined') {
+  console.log('[SocialShield] Class already exists, skipping redeclaration');
+} else {
+
 class SocialShieldContent {
   constructor() {
     this.isInitialized = false;
@@ -16,7 +21,22 @@ class SocialShieldContent {
     this.threatStats = {
       totalScanned: 0,
       threatsDetected: 0,
-      postsBlocked: 0
+      postsBlocked: 0,
+      sessionStartTime: Date.now()
+    };
+
+    // Enhanced threat logging system
+    this.threatLogs = {
+      detections: [],
+      statistics: {
+        spamDetected: 0,
+        phishingDetected: 0,
+        promptInjectionDetected: 0,
+        suspiciousLinkDetected: 0,
+        highSeverityThreats: 0,
+        criticalSeverityThreats: 0
+      },
+      maxLogSize: 1000  // Keep last 1000 threat logs
     };
     
     this.init();
@@ -26,8 +46,9 @@ class SocialShieldContent {
     try {
       console.log('[SocialShield] Initializing on', this.platform);
       
-      // Load user settings
+      // Load user settings and threat logs
       await this.loadSettings();
+      await this.loadThreatLogsFromStorage();
       
       // Only proceed if SocialShield is enabled
       if (!this.userSettings.enableSocialShield) {
@@ -222,18 +243,119 @@ class SocialShieldContent {
   showSocialShieldStatus() {
     const agentCount = this.agents && typeof this.agents === 'object' ? Object.keys(this.agents).length : 0;
     const agentStatus = agentCount > 0 ? `✅ ${agentCount} Active` : '⚠️ Loading';
+    const sessionTime = Math.floor((Date.now() - this.threatStats.sessionStartTime) / 60000);
+    const stats = this.threatLogs.statistics;
     
-    const status = `🛡️ SocialShield Status
-Platform: ${this.platform.toUpperCase()}
-AI Agents: ${agentStatus}
-Posts Scanned: ${this.threatStats.totalScanned}
-Threats Detected: ${this.threatStats.threatsDetected}
-Posts Blocked: ${this.threatStats.postsBlocked}
-Real-time: ✅ Online
-xAI Grok: ✅ Ready
-Autonomous Mesh: ✅ Operational`;
+    const detailedStatus = `🛡️ SocialShield Detailed Status
+
+🔍 SCANNING STATUS:
+• Platform: ${this.platform.toUpperCase()}
+• AI Agents: ${agentStatus}
+• Session Time: ${sessionTime} minutes
+• Posts Scanned: ${this.threatStats.totalScanned}
+
+🚨 THREAT DETECTION:
+• Total Threats: ${this.threatStats.threatsDetected}
+• Spam: ${stats.spamDetected}
+• Phishing: ${stats.phishingDetected}
+• Prompt Injection: ${stats.promptInjectionDetected}
+• Suspicious Links: ${stats.suspiciousLinkDetected}
+• High Severity: ${stats.highSeverityThreats}
+• Critical Severity: ${stats.criticalSeverityThreats}
+
+🛑 PROTECTION:
+• Posts Blocked: ${this.threatStats.postsBlocked}
+• Active Alerts: ${this.activeAlerts.size}
+• Stored Logs: ${this.threatLogs.detections.length}
+
+🌐 SYSTEM STATUS:
+• Real-time: ✅ Online
+• Storage: ✅ Active
+• Auto-scan: ✅ Enabled
+
+Press Ctrl+Shift+L to view threat logs`;
     
-    this.showMessage(status, 'info');
+    this.showMessage(detailedStatus, 'info');
+  }
+
+  // Method to access threat logs programmatically
+  getThreatLogs(filter = {}) {
+    let logs = this.threatLogs.detections;
+
+    // Apply filters if provided
+    if (filter.threatType) {
+      logs = logs.filter(log => log.threatType === filter.threatType);
+    }
+    if (filter.severity) {
+      logs = logs.filter(log => log.severity === filter.severity);
+    }
+    if (filter.username) {
+      logs = logs.filter(log => log.username.includes(filter.username));
+    }
+    if (filter.timeRange) {
+      const now = Date.now();
+      const timeRange = filter.timeRange * 60 * 60 * 1000; // hours to milliseconds
+      logs = logs.filter(log => (now - log.timestamp) < timeRange);
+    }
+
+    return {
+      logs,
+      totalCount: logs.length,
+      statistics: this.threatLogs.statistics,
+      sessionStats: this.threatStats
+    };
+  }
+
+  // Export threat logs for analysis
+  exportThreatLogs(format = 'json') {
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      sessionInfo: {
+        platform: this.platform,
+        sessionStartTime: this.threatStats.sessionStartTime,
+        totalScanned: this.threatStats.totalScanned
+      },
+      statistics: this.threatLogs.statistics,
+      detections: this.threatLogs.detections
+    };
+
+    if (format === 'json') {
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `socialshield-threats-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else if (format === 'csv') {
+      const csvHeader = 'Date,Username,Platform,ThreatType,Severity,Score,ContentPreview,Links,Blocked\n';
+      const csvRows = this.threatLogs.detections.map(log => {
+        return [
+          new Date(log.timestamp).toISOString(),
+          log.username,
+          log.platform,
+          log.threatType,
+          log.severity,
+          (log.threatScore * 100).toFixed(1) + '%',
+          '"' + log.contentPreview.replace(/"/g, '""') + '"',
+          log.links.join(';'),
+          log.blocked ? 'Yes' : 'No'
+        ].join(',');
+      }).join('\n');
+      
+      const csvData = csvHeader + csvRows;
+      const blob = new Blob([csvData], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `socialshield-threats-${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    this.showMessage(`Threat logs exported as ${format.toUpperCase()}`, 'success');
+    return exportData;
   }
 
   async startSocialMonitoring() {
@@ -393,22 +515,73 @@ Autonomous Mesh: ✅ Operational`;
 
   extractPostData(postElement) {
     try {
-      // X (Twitter) specific extraction
-      const textElement = postElement.querySelector('[data-testid="tweetText"]') ||
-                         postElement.querySelector('[lang]') ||
-                         postElement.querySelector('span');
-      
-      const text = textElement ? textElement.textContent.trim() : '';
-      
-      // Extract links
-      const linkElements = postElement.querySelectorAll('a[href^="http"]');
-      const links = Array.from(linkElements).map(el => el.href);
-      
-      // Extract user info
-      const userElement = postElement.querySelector('[data-testid="User-Name"]') ||
-                         postElement.querySelector('[data-testid="User-Names"]');
-      const username = userElement ? userElement.textContent : 'unknown';
-      
+      // Validate element before processing
+      if (!postElement || !postElement.querySelector) {
+        console.debug('[SocialShield] Invalid post element');
+        return null;
+      }
+
+      let text = '';
+      let links = [];
+      let username = 'unknown';
+
+      // Try multiple text selectors safely
+      const textSelectors = [
+        '[data-testid="tweetText"]',
+        '[lang]',
+        'span[class*="css"]',  // X uses CSS-in-JS classes
+        '.tweet-text',
+        'span'
+      ];
+
+      for (const selector of textSelectors) {
+        try {
+          const textElement = postElement.querySelector(selector);
+          if (textElement && textElement.textContent && textElement.textContent.trim()) {
+            text = textElement.textContent.trim();
+            break;
+          }
+        } catch (selectorError) {
+          console.debug(`[SocialShield] Selector failed: ${selector}`, selectorError.message);
+        }
+      }
+
+      // Extract links safely
+      try {
+        const linkElements = postElement.querySelectorAll('a[href]');
+        links = Array.from(linkElements)
+          .map(el => el.href)
+          .filter(href => href && (href.startsWith('http://') || href.startsWith('https://')));
+      } catch (linkError) {
+        console.debug('[SocialShield] Link extraction error:', linkError.message);
+      }
+
+      // Extract username safely
+      const userSelectors = [
+        '[data-testid="User-Name"]',
+        '[data-testid="User-Names"]',
+        '[data-testid="UserName"]',
+        '.username',
+        'a[href*="/"]'
+      ];
+
+      for (const selector of userSelectors) {
+        try {
+          const userElement = postElement.querySelector(selector);
+          if (userElement && userElement.textContent) {
+            username = userElement.textContent.trim().replace(/^@/, '') || username;
+            break;
+          }
+        } catch (userError) {
+          console.debug(`[SocialShield] User selector failed: ${selector}`);
+        }
+      }
+
+      // Only return valid post data
+      if (!text || text.length < 3) {
+        return null;
+      }
+
       return {
         id: this.generatePostId(postElement, text),
         text,
@@ -419,7 +592,7 @@ Autonomous Mesh: ✅ Operational`;
         timestamp: Date.now()
       };
     } catch (error) {
-      console.error('[SocialShield] Data extraction error:', error);
+      console.debug('[SocialShield] Data extraction error:', error.message);
       return null;
     }
   }
@@ -513,6 +686,23 @@ Autonomous Mesh: ✅ Operational`;
 
   async analyzeWithAutonomousMesh(postData) {
     try {
+      // First, get local evolution prediction using existing ThreatEvolutionEngine
+      const evolutionEngine = window.ThreatEvolutionEngine;
+      let evolutionPrediction = null;
+      
+      if (evolutionEngine) {
+        // Find matching threat pattern for evolution prediction
+        const matchingThreat = evolutionEngine.patterns.find(pattern => 
+          pattern.triggers.some(trigger => trigger.test(postData.text))
+        );
+        
+        if (matchingThreat) {
+          evolutionPrediction = evolutionEngine.predictEvolution(matchingThreat, postData.text);
+          console.log('[SocialShield] 🔮 Evolution prediction generated:', evolutionPrediction);
+        }
+      }
+
+      // Now get mesh analysis from Railway backend
       const response = await fetch(`${this.userSettings.railwayApiUrl}/proxy/analyze-threat`, {
         method: 'POST',
         headers: {
@@ -524,18 +714,29 @@ Autonomous Mesh: ✅ Operational`;
           context: {
             platform: postData.platform,
             author: postData.username,
-            links: postData.links
+            links: postData.links,
+            evolutionPrediction: evolutionPrediction // Include prediction in context
           },
           useGrok: true,
           useBrave: true,
-          priority: 'normal'
+          priority: 'normal',
+          enhancedSMP: true, // Request SMP agent coordination
+          predictiveAnalysis: evolutionPrediction ? true : false
         })
       });
 
       if (response.ok) {
-        const analysis = await response.json();
-        console.log('[SocialShield] 🤖 Autonomous mesh analysis:', analysis);
-        return analysis;
+        const meshAnalysis = await response.json();
+        console.log('[SocialShield] 🤖 Autonomous mesh analysis:', meshAnalysis);
+        
+        // Combine mesh analysis with local evolution prediction
+        if (evolutionPrediction) {
+          meshAnalysis.evolutionPrediction = evolutionPrediction;
+          meshAnalysis.enhancedConfidence = this.calculateEnhancedConfidence(meshAnalysis, evolutionPrediction);
+          meshAnalysis.predictiveInsights = this.generatePredictiveInsights(meshAnalysis, evolutionPrediction);
+        }
+        
+        return meshAnalysis;
       }
     } catch (error) {
       console.warn('[SocialShield] Autonomous mesh error:', error.message);
@@ -543,32 +744,354 @@ Autonomous Mesh: ✅ Operational`;
     return null;
   }
 
+  calculateEnhancedConfidence(meshAnalysis, evolutionPrediction) {
+    // Combine mesh confidence with evolution prediction confidence
+    const meshConfidence = meshAnalysis.confidence || 0.5;
+    const evolutionConfidence = evolutionPrediction.confidence || 0.5;
+    
+    // Weighted combination: 70% mesh, 30% evolution
+    return (meshConfidence * 0.7) + (evolutionConfidence * 0.3);
+  }
+
+  generatePredictiveInsights(meshAnalysis, evolutionPrediction) {
+    const insights = [];
+    
+    // Add evolution-based insights
+    insights.push(`Threat may evolve into ${evolutionPrediction.totalVariants} variants`);
+    insights.push(`Evolution timeline: ${evolutionPrediction.timeline}`);
+    
+    // Add top evolution categories
+    const topCategories = evolutionPrediction.predictions
+      .slice(0, 3)
+      .map(p => p.category);
+    
+    if (topCategories.length > 0) {
+      insights.push(`Primary evolution paths: ${topCategories.join(', ')}`);
+    }
+    
+    return insights;
+  }
+
   showPostThreatWarning(postElement, postData, threatAnalysis) {
     if (!this.userSettings.enablePostOverlays) return;
     
     // Avoid duplicate warnings
     if (postElement.querySelector('.ss-threat-warning')) return;
+
+    // Use existing HolographicUI if available
+    const holographicUI = window.HolographicUI;
     
+    if (holographicUI && threatAnalysis.evolutionPrediction) {
+      // Create holographic card using existing system
+      const threat = {
+        icon: this.getThreatIcon(threatAnalysis.threatType),
+        severity: threatAnalysis.severity,
+        type: threatAnalysis.threatType
+      };
+      
+      const evolution = {
+        originalMatch: postData.text.substring(0, 100) + '...',
+        confidence: threatAnalysis.enhancedConfidence || threatAnalysis.threatScore,
+        totalVariants: threatAnalysis.evolutionPrediction?.totalVariants || 'Unknown',
+        predictions: threatAnalysis.evolutionPrediction?.predictions || []
+      };
+      
+      // Create holographic threat overlay
+      holographicUI.createThreatOverlay(postElement, postData.text.substring(0, 50), threat, evolution);
+      
+      console.log('[SocialShield] 🌈 Holographic threat warning created');
+    } else {
+      // Fallback to enhanced warning overlay
+      this.createEnhancedThreatWarning(postElement, postData, threatAnalysis);
+    }
+    
+    // Log the threat
+    const threatLog = this.logThreat(postData, threatAnalysis);
+    
+    // Update stats
+    this.threatStats.postsBlocked++;
+    this.updateIndicatorColor('threat');
+    
+    // Send to SPM mesh for learning
+    this.sendThreatToSMPMesh(threatLog);
+  }
+
+  createEnhancedThreatWarning(postElement, postData, threatAnalysis) {
     const warning = document.createElement('div');
-    warning.className = 'ss-threat-warning';
-    warning.innerHTML = `⚠️ ${threatAnalysis.threatType.toUpperCase()}`;
+    warning.className = 'ss-enhanced-threat-warning';
+    
+    const severityColors = {
+      CRITICAL: '#ef4444',
+      HIGH: '#f59e0b', 
+      MEDIUM: '#84cc16',
+      LOW: '#06b6d4'
+    };
+    
+    const color = severityColors[threatAnalysis.severity] || '#ef4444';
+    
+    warning.innerHTML = `
+      <div class="ss-warning-header">
+        <span class="ss-threat-icon">${this.getThreatIcon(threatAnalysis.threatType)}</span>
+        <span class="ss-threat-label">SOCIAL THREAT</span>
+        <span class="ss-severity-badge" style="background: ${color}">${threatAnalysis.severity}</span>
+      </div>
+      <div class="ss-warning-details">
+        <div class="ss-threat-type">${threatAnalysis.threatType.replace('_', ' ').toUpperCase()}</div>
+        <div class="ss-confidence">Confidence: ${Math.round(threatAnalysis.threatScore * 100)}%</div>
+        ${threatAnalysis.evolutionPrediction ? 
+          `<div class="ss-evolution">⚡ ${threatAnalysis.evolutionPrediction.totalVariants} potential variants</div>` 
+          : ''
+        }
+        ${threatAnalysis.predictiveInsights ? 
+          `<div class="ss-insights">${threatAnalysis.predictiveInsights.slice(0, 2).join(' • ')}</div>`
+          : ''
+        }
+      </div>
+    `;
+    
+    warning.style.cssText = `
+      position: absolute !important;
+      top: 8px !important;
+      right: 8px !important;
+      background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(${this.hexToRgb(color)}, 0.3)) !important;
+      border: 2px solid ${color} !important;
+      border-radius: 12px !important;
+      padding: 12px !important;
+      color: white !important;
+      font-family: 'Segoe UI', sans-serif !important;
+      font-size: 11px !important;
+      z-index: 10 !important;
+      max-width: 280px !important;
+      backdrop-filter: blur(8px) !important;
+      box-shadow: 0 8px 32px rgba(${this.hexToRgb(color)}, 0.4) !important;
+      animation: socialThreatAppear 0.5s ease-out !important;
+    `;
     
     // Make post container relative for positioning
     postElement.style.position = 'relative';
     postElement.appendChild(warning);
     
-    // Log the threat
-    this.logThreat(postData, threatAnalysis);
+    // Add enhanced styles if not present
+    this.addEnhancedWarningStyles();
+  }
+
+  addEnhancedWarningStyles() {
+    if (document.getElementById('ss-enhanced-warning-styles')) return;
     
-    // Update stats
-    this.threatStats.postsBlocked++;
-    this.updateIndicatorColor('threat');
+    const style = document.createElement('style');
+    style.id = 'ss-enhanced-warning-styles';
+    style.textContent = `
+      @keyframes socialThreatAppear {
+        0% { opacity: 0; transform: translateY(-10px) scale(0.9); }
+        100% { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      
+      .ss-warning-header {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        margin-bottom: 6px !important;
+      }
+      
+      .ss-threat-icon {
+        font-size: 14px !important;
+      }
+      
+      .ss-threat-label {
+        font-weight: 700 !important;
+        font-size: 10px !important;
+        opacity: 0.9 !important;
+      }
+      
+      .ss-severity-badge {
+        padding: 2px 6px !important;
+        border-radius: 4px !important;
+        font-size: 9px !important;
+        font-weight: 700 !important;
+      }
+      
+      .ss-warning-details > div {
+        margin-bottom: 3px !important;
+        line-height: 1.3 !important;
+      }
+      
+      .ss-threat-type {
+        font-weight: 600 !important;
+        color: #fbbf24 !important;
+      }
+      
+      .ss-confidence {
+        opacity: 0.8 !important;
+      }
+      
+      .ss-evolution {
+        color: #60a5fa !important;
+        font-weight: 500 !important;
+      }
+      
+      .ss-insights {
+        color: #34d399 !important;
+        font-size: 10px !important;
+        opacity: 0.9 !important;
+        font-style: italic !important;
+      }
+    `;
+    
+    document.head.appendChild(style);
+  }
+
+  hexToRgb(hex) {
+    if (!hex || typeof hex !== 'string') return '239, 68, 68'; // red fallback
+    
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (result) {
+      return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
+    }
+    return '239, 68, 68'; // red fallback
+  }
+
+  sendThreatToSMPMesh(threatLog) {
+    // Send threat data to SPM mesh for cross-agent learning
+    try {
+      if (window.autonomousSecurityMesh) {
+        window.autonomousSecurityMesh.queueThreat({
+          type: 'social_media_threat',
+          data: threatLog,
+          platform: 'socialshield',
+          timestamp: Date.now()
+        });
+        
+        console.log('[SocialShield] 📡 Threat data sent to SPM mesh for learning');
+      }
+    } catch (error) {
+      console.debug('[SocialShield] SPM mesh not available for threat sharing');
+    }
   }
 
   logThreat(postData, threatAnalysis) {
-    console.warn(`[SocialShield] 🚨 THREAT: ${threatAnalysis.threatType} in post by @${postData.username}`);
-    console.warn(`[SocialShield] Content: ${postData.text.substring(0, 100)}...`);
-    console.warn(`[SocialShield] Score: ${(threatAnalysis.threatScore * 100).toFixed(0)}%`);
+    const threatLog = {
+      id: crypto.randomUUID(),
+      timestamp: Date.now(),
+      date: new Date().toISOString(),
+      postId: postData.id,
+      username: postData.username,
+      platform: postData.platform,
+      threatType: threatAnalysis.threatType,
+      threatScore: threatAnalysis.threatScore,
+      severity: threatAnalysis.severity,
+      source: threatAnalysis.source,
+      explanation: threatAnalysis.explanation,
+      recommendations: threatAnalysis.recommendations || [],
+      contentPreview: postData.text.substring(0, 200),
+      fullContent: postData.text,
+      links: postData.links || [],
+      blocked: true,
+      falsePositive: false  // Can be marked later by user
+    };
+
+    // Add to threat log
+    this.threatLogs.detections.unshift(threatLog);
+
+    // Maintain log size limit
+    if (this.threatLogs.detections.length > this.threatLogs.maxLogSize) {
+      this.threatLogs.detections = this.threatLogs.detections.slice(0, this.threatLogs.maxLogSize);
+    }
+
+    // Update statistics
+    this.updateThreatStatistics(threatAnalysis);
+
+    // Store in browser storage for persistence
+    this.saveThreatLogsToStorage();
+
+    // Console logging for debugging
+    console.group(`[SocialShield] 🚨 THREAT DETECTED`);
+    console.warn(`Type: ${threatAnalysis.threatType} | Severity: ${threatAnalysis.severity}`);
+    console.warn(`User: @${postData.username} | Score: ${(threatAnalysis.threatScore * 100).toFixed(0)}%`);
+    console.warn(`Content: ${postData.text.substring(0, 100)}...`);
+    console.warn(`Source: ${threatAnalysis.source} | Explanation: ${threatAnalysis.explanation}`);
+    if (threatAnalysis.recommendations.length > 0) {
+      console.warn(`Recommendations: ${threatAnalysis.recommendations.join(', ')}`);
+    }
+    console.groupEnd();
+
+    return threatLog;
+  }
+
+  updateThreatStatistics(threatAnalysis) {
+    const stats = this.threatLogs.statistics;
+    
+    // Update type-specific counters
+    switch (threatAnalysis.threatType) {
+      case 'spam':
+        stats.spamDetected++;
+        break;
+      case 'phishing':
+        stats.phishingDetected++;
+        break;
+      case 'prompt_injection':
+        stats.promptInjectionDetected++;
+        break;
+      case 'suspicious_link':
+        stats.suspiciousLinkDetected++;
+        break;
+    }
+
+    // Update severity counters
+    if (threatAnalysis.severity === 'HIGH') {
+      stats.highSeverityThreats++;
+    } else if (threatAnalysis.severity === 'CRITICAL') {
+      stats.criticalSeverityThreats++;
+    }
+  }
+
+  async saveThreatLogsToStorage() {
+    try {
+      const logData = {
+        logs: this.threatLogs,
+        lastUpdated: Date.now()
+      };
+
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        chrome.storage.local.set({ 'socialshield_threat_logs': logData });
+      } else {
+        // Fallback to localStorage with size management
+        const dataString = JSON.stringify(logData);
+        if (dataString.length < 5000000) {  // 5MB limit
+          localStorage.setItem('socialshield_threat_logs', dataString);
+        }
+      }
+    } catch (error) {
+      console.warn('[SocialShield] Failed to save threat logs:', error.message);
+    }
+  }
+
+  async loadThreatLogsFromStorage() {
+    try {
+      let logData = null;
+
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        logData = await new Promise((resolve) => {
+          chrome.storage.local.get(['socialshield_threat_logs'], (result) => {
+            resolve(result.socialshield_threat_logs);
+          });
+        });
+      } else {
+        const stored = localStorage.getItem('socialshield_threat_logs');
+        if (stored) {
+          logData = JSON.parse(stored);
+        }
+      }
+
+      if (logData && logData.logs) {
+        this.threatLogs = {
+          ...this.threatLogs,
+          ...logData.logs
+        };
+        console.log(`[SocialShield] Loaded ${this.threatLogs.detections.length} threat logs from storage`);
+      }
+    } catch (error) {
+      console.warn('[SocialShield] Failed to load threat logs:', error.message);
+    }
   }
 
   updateIndicatorStats() {
@@ -600,7 +1123,380 @@ Autonomous Mesh: ✅ Operational`;
         e.preventDefault();
         this.toggleSocialShield();
       }
+      
+      // Ctrl+Shift+L: View threat logs
+      if (e.ctrlKey && e.shiftKey && e.key === 'L') {
+        e.preventDefault();
+        this.showThreatLogsViewer();
+      }
+      
+      // Ctrl+Shift+E: Export threat logs
+      if (e.ctrlKey && e.shiftKey && e.key === 'E') {
+        e.preventDefault();
+        this.exportThreatLogs('json');
+      }
+      
+      // Ctrl+Shift+C: Clear threat logs
+      if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+        e.preventDefault();
+        this.clearThreatLogs();
+      }
     });
+  }
+
+  showThreatLogsViewer() {
+    // Remove existing viewer
+    const existing = document.getElementById('socialshield-threat-viewer');
+    if (existing) {
+      existing.remove();
+      return;
+    }
+
+    const viewer = document.createElement('div');
+    viewer.id = 'socialshield-threat-viewer';
+    viewer.innerHTML = this.generateThreatLogsHTML();
+    
+    viewer.style.cssText = `
+      position: fixed !important;
+      top: 50px !important;
+      right: 20px !important;
+      width: 450px !important;
+      max-height: 600px !important;
+      background: linear-gradient(135deg, #1e293b, #334155) !important;
+      border: 2px solid #64748b !important;
+      border-radius: 12px !important;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3) !important;
+      z-index: 999999 !important;
+      font-family: 'Segoe UI', sans-serif !important;
+      color: white !important;
+      overflow: hidden !important;
+      transform: translateX(100%) !important;
+      animation: slideInFromRight 0.3s ease-out forwards !important;
+    `;
+
+    document.body.appendChild(viewer);
+    this.addThreatLogStyles();
+
+    // Auto-hide after 30 seconds
+    setTimeout(() => {
+      if (viewer.parentElement) {
+        viewer.style.animation = 'slideOutToRight 0.3s ease-out forwards';
+        setTimeout(() => viewer.remove(), 300);
+      }
+    }, 30000);
+  }
+
+  generateThreatLogsHTML() {
+    const logs = this.threatLogs.detections.slice(0, 10); // Show last 10
+    const stats = this.threatLogs.statistics;
+    const sessionTime = Math.floor((Date.now() - this.threatStats.sessionStartTime) / 60000);
+
+    let logsHTML = '';
+    
+    if (logs.length === 0) {
+      logsHTML = `
+        <div class="ss-log-empty">
+          🛡️ No threats detected this session
+          <small>SocialShield is actively monitoring</small>
+        </div>
+      `;
+    } else {
+      logsHTML = logs.map(log => `
+        <div class="ss-log-entry ${log.severity.toLowerCase()}">
+          <div class="ss-log-header">
+            <span class="ss-threat-badge ${log.severity.toLowerCase()}">${log.threatType.toUpperCase()}</span>
+            <span class="ss-time">${this.formatTimeAgo(log.timestamp)}</span>
+          </div>
+          <div class="ss-log-user">@${log.username}</div>
+          <div class="ss-log-content">${log.contentPreview}</div>
+          <div class="ss-log-score">Score: ${(log.threatScore * 100).toFixed(0)}% | ${log.severity}</div>
+          ${log.links.length > 0 ? `<div class="ss-log-links">🔗 ${log.links.length} links</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    return `
+      <div class="ss-viewer-header">
+        <div class="ss-title">🛡️ SocialShield Threat Log</div>
+        <button class="ss-close" onclick="document.getElementById('socialshield-threat-viewer').remove()">×</button>
+      </div>
+      
+      <div class="ss-stats-summary">
+        <div class="ss-stat-item">
+          <span class="ss-stat-value">${this.threatStats.threatsDetected}</span>
+          <span class="ss-stat-label">Threats</span>
+        </div>
+        <div class="ss-stat-item">
+          <span class="ss-stat-value">${this.threatStats.totalScanned}</span>
+          <span class="ss-stat-label">Scanned</span>
+        </div>
+        <div class="ss-stat-item">
+          <span class="ss-stat-value">${sessionTime}m</span>
+          <span class="ss-stat-label">Session</span>
+        </div>
+      </div>
+
+      <div class="ss-threat-breakdown">
+        <div class="ss-breakdown-item">🔥 Spam: ${stats.spamDetected}</div>
+        <div class="ss-breakdown-item">🎣 Phishing: ${stats.phishingDetected}</div>
+        <div class="ss-breakdown-item">💉 Injection: ${stats.promptInjectionDetected}</div>
+        <div class="ss-breakdown-item">🔗 Suspicious: ${stats.suspiciousLinkDetected}</div>
+      </div>
+      
+      <div class="ss-logs-container">
+        ${logsHTML}
+      </div>
+      
+      <div class="ss-viewer-footer">
+        <button onclick="window.socialShield.exportThreatLogs('json')" class="ss-export-btn">📥 Export JSON</button>
+        <button onclick="window.socialShield.exportThreatLogs('csv')" class="ss-export-btn">📊 Export CSV</button>
+        <button onclick="window.socialShield.clearThreatLogs()" class="ss-clear-btn">🗑️ Clear</button>
+      </div>
+    `;
+  }
+
+  addThreatLogStyles() {
+    if (document.getElementById('socialshield-threat-styles')) return;
+
+    const style = document.createElement('style');
+    style.id = 'socialshield-threat-styles';
+    style.textContent = `
+      @keyframes slideInFromRight {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+      }
+      
+      @keyframes slideOutToRight {
+        from { transform: translateX(0); }
+        to { transform: translateX(100%); }
+      }
+      
+      .ss-viewer-header {
+        padding: 16px !important;
+        background: linear-gradient(135deg, #dc2626, #ef4444) !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+      }
+      
+      .ss-title {
+        font-weight: 700 !important;
+        font-size: 16px !important;
+      }
+      
+      .ss-close {
+        background: rgba(255, 255, 255, 0.2) !important;
+        border: none !important;
+        color: white !important;
+        width: 24px !important;
+        height: 24px !important;
+        border-radius: 50% !important;
+        cursor: pointer !important;
+        font-size: 18px !important;
+        line-height: 1 !important;
+      }
+      
+      .ss-stats-summary {
+        display: flex !important;
+        justify-content: space-around !important;
+        padding: 12px !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+      }
+      
+      .ss-stat-item {
+        text-align: center !important;
+      }
+      
+      .ss-stat-value {
+        display: block !important;
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        color: #60a5fa !important;
+      }
+      
+      .ss-stat-label {
+        font-size: 11px !important;
+        opacity: 0.8 !important;
+      }
+      
+      .ss-threat-breakdown {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+        padding: 12px !important;
+        font-size: 12px !important;
+      }
+      
+      .ss-breakdown-item {
+        background: rgba(255, 255, 255, 0.1) !important;
+        padding: 6px !important;
+        border-radius: 6px !important;
+        text-align: center !important;
+      }
+      
+      .ss-logs-container {
+        max-height: 300px !important;
+        overflow-y: auto !important;
+        padding: 0 12px !important;
+      }
+      
+      .ss-log-entry {
+        margin-bottom: 12px !important;
+        padding: 12px !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-radius: 8px !important;
+        border-left: 4px solid #64748b !important;
+      }
+      
+      .ss-log-entry.high {
+        border-left-color: #f59e0b !important;
+        background: rgba(245, 158, 11, 0.1) !important;
+      }
+      
+      .ss-log-entry.critical {
+        border-left-color: #dc2626 !important;
+        background: rgba(220, 38, 38, 0.1) !important;
+      }
+      
+      .ss-log-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        margin-bottom: 6px !important;
+      }
+      
+      .ss-threat-badge {
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        padding: 2px 6px !important;
+        border-radius: 4px !important;
+        background: #64748b !important;
+      }
+      
+      .ss-threat-badge.high {
+        background: #f59e0b !important;
+      }
+      
+      .ss-threat-badge.critical {
+        background: #dc2626 !important;
+      }
+      
+      .ss-time {
+        font-size: 11px !important;
+        opacity: 0.7 !important;
+      }
+      
+      .ss-log-user {
+        font-weight: 600 !important;
+        color: #60a5fa !important;
+        font-size: 13px !important;
+        margin-bottom: 4px !important;
+      }
+      
+      .ss-log-content {
+        font-size: 12px !important;
+        line-height: 1.4 !important;
+        opacity: 0.9 !important;
+        margin-bottom: 6px !important;
+      }
+      
+      .ss-log-score {
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        color: #fbbf24 !important;
+      }
+      
+      .ss-log-links {
+        font-size: 11px !important;
+        color: #60a5fa !important;
+        margin-top: 4px !important;
+      }
+      
+      .ss-log-empty {
+        text-align: center !important;
+        padding: 40px 20px !important;
+        opacity: 0.7 !important;
+      }
+      
+      .ss-log-empty small {
+        display: block !important;
+        margin-top: 8px !important;
+        font-size: 11px !important;
+        opacity: 0.6 !important;
+      }
+      
+      .ss-viewer-footer {
+        padding: 12px !important;
+        display: flex !important;
+        gap: 8px !important;
+        background: rgba(0, 0, 0, 0.2) !important;
+      }
+      
+      .ss-export-btn, .ss-clear-btn {
+        flex: 1 !important;
+        padding: 8px 12px !important;
+        border: none !important;
+        border-radius: 6px !important;
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        color: white !important;
+      }
+      
+      .ss-export-btn {
+        background: #059669 !important;
+      }
+      
+      .ss-clear-btn {
+        background: #dc2626 !important;
+      }
+      
+      .ss-export-btn:hover {
+        background: #047857 !important;
+      }
+      
+      .ss-clear-btn:hover {
+        background: #b91c1c !important;
+      }
+    `;
+    
+    document.head.appendChild(style);
+  }
+
+  formatTimeAgo(timestamp) {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (days > 0) return `${days}d ago`;
+    if (hours > 0) return `${hours}h ago`;
+    if (minutes > 0) return `${minutes}m ago`;
+    return 'Just now';
+  }
+
+  clearThreatLogs() {
+    if (confirm('Clear all threat logs? This cannot be undone.')) {
+      this.threatLogs.detections = [];
+      this.threatLogs.statistics = {
+        spamDetected: 0,
+        phishingDetected: 0,
+        promptInjectionDetected: 0,
+        suspiciousLinkDetected: 0,
+        highSeverityThreats: 0,
+        criticalSeverityThreats: 0
+      };
+      
+      this.saveThreatLogsToStorage();
+      this.showMessage('Threat logs cleared', 'success');
+      
+      // Refresh viewer if open
+      const viewer = document.getElementById('socialshield-threat-viewer');
+      if (viewer) {
+        viewer.innerHTML = this.generateThreatLogsHTML();
+      }
+    }
   }
 
   toggleSocialShield() {
@@ -661,6 +1557,11 @@ Autonomous Mesh: ✅ Operational`;
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
+
+// Store class globally to prevent redeclaration
+window.SocialShieldContent = SocialShieldContent;
+
+} // End of class declaration guard
 
 // Initialize SocialShield when DOM is ready
 function initSocialShield() {
