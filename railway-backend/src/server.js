@@ -1,6 +1,7 @@
 /**
  * PromptGuardian Railway Backend
  * API Proxy and Threat Intelligence Server
+ * Enhanced with security, circuit breakers, and local ML fallbacks
  */
 
 const express = require('express');
@@ -9,6 +10,17 @@ const helmet = require('helmet');
 const { RateLimiterMemory } = require('rate-limiter-flexible');
 const NodeCache = require('node-cache');
 require('dotenv').config();
+
+// Import security and resilience middleware
+const { 
+  authenticateExtension, 
+  contentSecurityPolicy, 
+  authRoutes 
+} = require('./middleware/auth');
+const { 
+  circuitBreakerStatsMiddleware 
+} = require('./middleware/circuit-breaker');
+const { localThreatDetector } = require('./services/local-ml');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,13 +33,44 @@ const rateLimiter = new RateLimiterMemory({
   duration: 60, // Per 60 seconds
 });
 
-// Middleware
-app.use(helmet());
-app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['chrome-extension://*'],
-  credentials: true
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: false, // We'll use our custom CSP
+  crossOriginEmbedderPolicy: false
 }));
-app.use(express.json({ limit: '10mb' }));
+app.use(contentSecurityPolicy);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow chrome-extension origins and configured domains
+    const allowedOrigins = [
+      ...(process.env.ALLOWED_ORIGINS?.split(',') || []),
+      /^chrome-extension:\/\//,
+      /^moz-extension:\/\//
+    ];
+    
+    if (!origin || allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') return allowed === origin;
+      return allowed.test(origin);
+    })) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+}));
+
+app.use(express.json({ 
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
+
+// Circuit breaker middleware
+app.use(circuitBreakerStatsMiddleware);
 
 // Rate limiting middleware
 app.use(async (req, res, next) => {
@@ -39,14 +82,57 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Routes
+// Auth routes (public)
+authRoutes(app);
+
+// Routes with authentication
 const apiRoutes = require('./routes/api');
 const threatRoutes = require('./routes/threats');
 const proxyRoutes = require('./routes/proxy');
 
-app.use('/api/v1', apiRoutes);
-app.use('/threats', threatRoutes);
-app.use('/proxy', proxyRoutes);
+app.use('/api/v1', authenticateExtension, apiRoutes);
+app.use('/threats', authenticateExtension, threatRoutes);
+app.use('/proxy', authenticateExtension, proxyRoutes);
+
+// Local ML fallback endpoint
+app.post('/local/analyze', authenticateExtension, async (req, res) => {
+  try {
+    const { content, context } = req.body;
+    
+    if (!content) {
+      return res.status(400).json({ error: 'Content required' });
+    }
+    
+    const analysis = await localThreatDetector.analyzeThreat(content, context);
+    
+    res.json({
+      ...analysis,
+      fallback: true,
+      message: 'Analysis performed using local ML model'
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Local analysis failed',
+      message: error.message
+    });
+  }
+});
+
+// Circuit breaker status endpoint
+app.get('/system/circuit-breakers', authenticateExtension, (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+  
+  res.json(req.circuitBreakers.manager.getAllStats());
+});
+
+// Local ML model stats
+app.get('/system/ml-stats', authenticateExtension, (req, res) => {
+  res.json(localThreatDetector.getModelStats());
+});
 
 // Health check
 app.get('/health', (req, res) => {

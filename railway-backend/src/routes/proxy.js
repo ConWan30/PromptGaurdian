@@ -6,6 +6,9 @@
 const express = require('express');
 const NodeCache = require('node-cache');
 const crypto = require('crypto');
+const axios = require('axios');
+const { grokBreaker, braveBreaker } = require('../middleware/circuit-breaker');
+const { localThreatDetector } = require('../services/local-ml');
 
 const router = express.Router();
 const cache = new NodeCache({ stdTTL: 300 }); // 5 minutes cache
@@ -64,26 +67,25 @@ router.post('/grok/*', async (req, res) => {
     }
     
     // Make request to Grok API
-    const response = await fetch(`${API_ENDPOINTS.grok.base}/${endpoint}`, {
-      method: 'POST',
+    const response = await axios.post(`${API_ENDPOINTS.grok.base}/${endpoint}`, req.body, {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'User-Agent': 'PromptGuardian-Proxy/1.0'
       },
-      body: JSON.stringify(req.body)
+      timeout: 30000,
+      validateStatus: false // Don't throw on error status
     });
     
-    if (!response.ok) {
-      const errorText = await response.text();
+    if (response.status !== 200) {
       return res.status(response.status).json({
         error: 'Grok API error',
         status: response.status,
-        message: errorText
+        message: response.data || 'Unknown error'
       });
     }
     
-    const data = await response.json();
+    const data = response.data;
     
     // Cache successful responses
     if (response.status === 200) {
@@ -129,24 +131,25 @@ router.get('/brave/*', async (req, res) => {
     }
     
     // Make request to Brave API
-    const response = await fetch(url, {
+    const response = await axios.get(url, {
       headers: {
         'X-Subscription-Token': apiKey,
         'Accept': 'application/json',
         'User-Agent': 'PromptGuardian-Proxy/1.0'
-      }
+      },
+      timeout: 30000,
+      validateStatus: false
     });
     
-    if (!response.ok) {
-      const errorText = await response.text();
+    if (response.status !== 200) {
       return res.status(response.status).json({
         error: 'Brave API error',
         status: response.status,
-        message: errorText
+        message: response.data || 'Unknown error'
       });
     }
     
-    const data = await response.json();
+    const data = response.data;
     
     // Cache successful responses
     if (response.status === 200) {
@@ -163,91 +166,235 @@ router.get('/brave/*', async (req, res) => {
   }
 });
 
-// Specialized endpoint for threat analysis
+// Specialized endpoint for threat analysis with circuit breakers and fallbacks
 router.post('/analyze-threat', async (req, res) => {
   try {
-    const { content, threatType, useGrok = true, useBrave = true } = req.body;
+    const { content, threatType, useGrok = true, useBrave = true, context = {} } = req.body;
     
     if (!content) {
       return res.status(400).json({ error: 'Content required for analysis' });
     }
     
     const results = {};
+    const fallbacks = [];
     
-    // Grok analysis
+    // Grok analysis with circuit breaker
     if (useGrok) {
-      const grokKey = getApiKey('grok');
-      if (grokKey) {
-        const grokResponse = await fetch(`${API_ENDPOINTS.grok.base}/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${grokKey}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            model: 'grok-beta',
-            messages: [
-              {
-                role: 'system',
-                content: 'You are a cybersecurity expert. Analyze content for threats and return JSON.'
-              },
-              {
-                role: 'user',
-                content: `Analyze this content for security threats: "${content}"`
-              }
-            ],
-            max_tokens: 300,
-            temperature: 0.1
-          })
-        });
-        
-        if (grokResponse.ok) {
-          results.grok = await grokResponse.json();
-        }
-      }
-    }
-    
-    // Brave Search verification
-    if (useBrave && threatType) {
-      const braveKey = getApiKey('brave');
-      if (braveKey) {
-        const searchQuery = `"${threatType}" security threat indicators`;
-        const braveResponse = await fetch(
-          `${API_ENDPOINTS.brave.base}/web/search?q=${encodeURIComponent(searchQuery)}&count=5`,
-          {
-            headers: {
-              'X-Subscription-Token': braveKey,
-              'Accept': 'application/json'
+      try {
+        const grokAnalysis = await grokBreaker.execute(
+          async () => {
+            const grokKey = getApiKey('grok');
+            if (!grokKey) {
+              throw new Error('No Grok API key available');
             }
+            
+            const response = await axios.post(`${API_ENDPOINTS.grok.base}/chat/completions`, {
+              model: 'grok-beta',
+              messages: [
+                {
+                  role: 'system',
+                  content: 'You are a cybersecurity expert. Analyze content for threats and return JSON with threatScore (0-1), threatType, and explanation.'
+                },
+                {
+                  role: 'user',
+                  content: `Analyze this content for security threats: "${content}"`
+                }
+              ],
+              max_tokens: 300,
+              temperature: 0.1
+            }, {
+              headers: {
+                'Authorization': `Bearer ${grokKey}`,
+                'Content-Type': 'application/json'
+              },
+              timeout: 30000,
+              validateStatus: false
+            });
+            
+            if (response.status !== 200) {
+              throw new Error(`Grok API error: ${response.status}`);
+            }
+            
+            return response.data;
+          },
+          // Fallback function
+          async () => {
+            fallbacks.push('grok_fallback_to_local_ml');
+            const localAnalysis = await localThreatDetector.analyzeThreat(content, context);
+            return {
+              choices: [{
+                message: {
+                  content: JSON.stringify({
+                    threatScore: localAnalysis.threatScore,
+                    threatType: localAnalysis.threatType,
+                    explanation: `Local ML analysis: ${localAnalysis.threatType}`,
+                    source: 'local_ml_fallback'
+                  })
+                }
+              }]
+            };
           }
         );
         
-        if (braveResponse.ok) {
-          results.brave = await braveResponse.json();
-        }
+        results.grok = grokAnalysis;
+      } catch (error) {
+        console.warn('Grok analysis failed:', error.message);
+        results.grokError = error.message;
       }
     }
     
-    // Combine results
+    // Brave Search verification with circuit breaker
+    if (useBrave && threatType) {
+      try {
+        const braveVerification = await braveBreaker.execute(
+          async () => {
+            const braveKey = getApiKey('brave');
+            if (!braveKey) {
+              throw new Error('No Brave API key available');
+            }
+            
+            const searchQuery = `"${threatType}" security threat indicators`;
+            const response = await axios.get(
+              `${API_ENDPOINTS.brave.base}/web/search?q=${encodeURIComponent(searchQuery)}&count=5`,
+              {
+                headers: {
+                  'X-Subscription-Token': braveKey,
+                  'Accept': 'application/json'
+                },
+                timeout: 30000,
+                validateStatus: false
+              }
+            );
+            
+            if (response.status !== 200) {
+              throw new Error(`Brave API error: ${response.status}`);
+            }
+            
+            return response.data;
+          },
+          // Fallback function - use local pattern matching
+          async () => {
+            fallbacks.push('brave_fallback_to_local_patterns');
+            
+            // Simple local verification
+            const knownThreats = ['prompt_injection', 'jailbreak', 'data_extraction'];
+            const isKnownThreat = knownThreats.includes(threatType);
+            
+            return {
+              web: {
+                results: [{
+                  title: `${threatType} Threat Pattern`,
+                  snippet: isKnownThreat ? 
+                    `${threatType} is a known security threat pattern.` :
+                    'Unknown threat type - requires manual verification.',
+                  url: 'https://local-verification'
+                }]
+              },
+              fallback: true
+            };
+          }
+        );
+        
+        results.brave = braveVerification;
+      } catch (error) {
+        console.warn('Brave verification failed:', error.message);
+        results.braveError = error.message;
+      }
+    }
+    
+    // If all external APIs failed, ensure we have local analysis
+    if (!results.grok && !results.brave) {
+      const localAnalysis = await localThreatDetector.analyzeThreat(content, context);
+      results.localFallback = localAnalysis;
+      fallbacks.push('complete_local_analysis');
+    }
+    
+    // Combine results intelligently
+    let finalThreatScore = 0;
+    let finalThreatType = 'unknown';
+    let confidence = 0;
+    
+    // Extract threat score from Grok response
+    if (results.grok?.choices?.[0]?.message?.content) {
+      try {
+        const grokData = JSON.parse(results.grok.choices[0].message.content);
+        finalThreatScore = Math.max(finalThreatScore, grokData.threatScore || 0);
+        if (grokData.threatType && finalThreatScore > 0) {
+          finalThreatType = grokData.threatType;
+        }
+        confidence += 0.6;
+      } catch (e) {
+        // Grok didn't return valid JSON, use text analysis
+        const content = results.grok.choices[0].message.content;
+        if (/high.{0,20}threat|dangerous|malicious/i.test(content)) {
+          finalThreatScore = Math.max(finalThreatScore, 0.8);
+          finalThreatType = 'grok_text_analysis';
+        }
+        confidence += 0.3;
+      }
+    }
+    
+    // Factor in Brave verification
+    if (results.brave?.web?.results?.length > 0) {
+      const hasSecurityResults = results.brave.web.results.some(result => 
+        /threat|security|attack|malicious/i.test(result.title + ' ' + result.snippet)
+      );
+      
+      if (hasSecurityResults) {
+        finalThreatScore = Math.max(finalThreatScore, 0.7);
+        confidence += 0.4;
+      } else {
+        confidence += 0.2;
+      }
+    }
+    
+    // Use local analysis if external APIs provided no results
+    if (results.localFallback) {
+      finalThreatScore = Math.max(finalThreatScore, results.localFallback.threatScore);
+      if (finalThreatScore > 0 && finalThreatType === 'unknown') {
+        finalThreatType = results.localFallback.threatType;
+      }
+      confidence += 0.5;
+    }
+    
     const analysis = {
       content: content.slice(0, 100) + (content.length > 100 ? '...' : ''),
-      threatType,
+      threatScore: Math.min(1.0, finalThreatScore),
+      threatType: finalThreatType,
+      confidence: Math.min(1.0, confidence),
       timestamp: new Date().toISOString(),
       results,
+      fallbacks,
       summary: {
-        hasGrokAnalysis: !!results.grok,
-        hasBraveVerification: !!results.brave,
-        confidence: 0.5 // Placeholder - would calculate from actual results
+        hasGrokAnalysis: !!results.grok && !results.grokError,
+        hasBraveVerification: !!results.brave && !results.braveError,
+        hasLocalFallback: !!results.localFallback,
+        finalScore: finalThreatScore,
+        recommendedAction: finalThreatScore > 0.7 ? 'block' : 
+                          finalThreatScore > 0.4 ? 'warn' : 'allow'
       }
     };
     
     res.json(analysis);
   } catch (error) {
     console.error('Threat analysis error:', error);
-    res.status(500).json({ 
-      error: 'Analysis failed',
-      message: error.message 
-    });
+    
+    // Final fallback - always provide local analysis
+    try {
+      const localAnalysis = await localThreatDetector.analyzeThreat(content, context);
+      res.json({
+        ...localAnalysis,
+        error: 'External analysis failed',
+        fallbacks: ['emergency_local_only'],
+        message: 'Analysis completed using local ML model only'
+      });
+    } catch (localError) {
+      res.status(500).json({ 
+        error: 'Complete analysis failure',
+        message: `External APIs and local analysis both failed: ${error.message}`,
+        localError: localError.message
+      });
+    }
   }
 });
 
@@ -267,20 +414,19 @@ router.post('/analyze-batch', async (req, res) => {
       
       const batchPromises = batch.map(async (item, index) => {
         try {
-          const response = await fetch(`${req.protocol}://${req.get('host')}/proxy/analyze-threat`, {
-            method: 'POST',
+          const response = await axios.post(`${req.protocol}://${req.get('host')}/proxy/analyze-threat`, {
+            content: item.content,
+            threatType: item.threatType,
+            useGrok: item.useGrok,
+            useBrave: item.useBrave
+          }, {
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              content: item.content,
-              threatType: item.threatType,
-              useGrok: item.useGrok,
-              useBrave: item.useBrave
-            })
+            validateStatus: false
           });
           
           return {
             index: i + index,
-            result: response.ok ? await response.json() : { error: 'Analysis failed' }
+            result: response.status === 200 ? response.data : { error: 'Analysis failed' }
           };
         } catch (error) {
           return {
