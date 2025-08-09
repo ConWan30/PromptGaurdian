@@ -607,7 +607,18 @@ Provide detailed threat analysis as JSON.`
     // Process Grok analysis with enhanced parsing
     if (results.grok?.choices?.[0]?.message?.content) {
       try {
-        grokAnalysis = JSON.parse(results.grok.choices[0].message.content);
+        let grokContent = results.grok.choices[0].message.content;
+        
+        // Extract JSON from markdown code blocks
+        const jsonMatch = grokContent.match(/```json\s*([\s\S]*?)\s*```/) || 
+                         grokContent.match(/```\s*([\s\S]*?)\s*```/) ||
+                         grokContent.match(/\{[\s\S]*\}/);
+        
+        if (jsonMatch) {
+          grokContent = jsonMatch[1] || jsonMatch[0];
+        }
+        
+        grokAnalysis = JSON.parse(grokContent.trim());
         finalThreatScore = Math.max(finalThreatScore, grokAnalysis.threatScore || 0);
         if (grokAnalysis.threatType && finalThreatScore > 0) {
           finalThreatType = grokAnalysis.threatType;
@@ -619,7 +630,7 @@ Provide detailed threat analysis as JSON.`
           recommendations = [...recommendations, ...grokAnalysis.recommendations];
         }
         confidence += 0.7; // Grok gets high confidence weight
-        console.log(`[AutonomousMesh] Grok analysis: ${finalThreatScore} score, ${finalThreatType} type`);
+        console.log(`[AutonomousMesh] ✅ Grok JSON parsed successfully: ${finalThreatScore} score, ${finalThreatType} type, ${finalSeverity} severity`);
       } catch (e) {
         console.warn('[AutonomousMesh] Grok returned non-JSON response, parsing text...');
         const textContent = results.grok.choices[0].message.content;
