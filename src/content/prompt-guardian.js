@@ -924,22 +924,32 @@ function createIndicator() {
 function startAdvancedMonitoring() {
   console.log('[PromptGuardian] 🔍 Starting Advanced Threat Monitoring...');
   
-  const selectors = [
-    'textarea',
-    'input[type="text"]',
-    'div[contenteditable="true"]',
-    '[role="textbox"]'
-  ];
+  // Use platform-specific selectors for comprehensive coverage
+  const platformSelectors = getPlatformSpecificSelectors();
+  const allElements = document.querySelectorAll(platformSelectors);
+  
+  console.log(`[PromptGuardian] 📊 Found ${allElements.length} input elements on platform: ${window.location.hostname}`);
   
   let foundInputs = 0;
   
-  selectors.forEach(selector => {
-    const elements = document.querySelectorAll(selector);
-    console.log(`[PromptGuardian] 📊 Found ${elements.length} elements: ${selector}`);
+  // Group elements by type for better logging
+  const elementTypes = {};
+  allElements.forEach(element => {
+    const tagName = element.tagName.toLowerCase();
+    const type = element.type || 'contenteditable';
+    const key = element.contentEditable === 'true' ? 'contenteditable' : `${tagName}[${type}]`;
+    
+    if (!elementTypes[key]) elementTypes[key] = [];
+    elementTypes[key].push(element);
+  });
+  
+  // Process each type
+  Object.entries(elementTypes).forEach(([type, elements]) => {
+    console.log(`[PromptGuardian] 📊 Found ${elements.length} ${type} elements`);
     foundInputs += elements.length;
     
     elements.forEach((element, index) => {
-      addAdvancedThreatDetection(element, `${selector}[${index}]`);
+      addAdvancedThreatDetection(element, `${type}[${index}]`);
     });
   });
   
@@ -996,11 +1006,96 @@ function addAdvancedThreatDetection(element, identifier) {
   element.setAttribute('data-pg-monitored', 'true');
 }
 
+// Platform-specific input selectors for comprehensive AI platform support
+function getPlatformSpecificSelectors() {
+  const hostname = window.location.hostname;
+  
+  // Base selectors that work everywhere
+  let selectors = [
+    'textarea',
+    'input[type="text"]', 
+    'div[contenteditable="true"]'
+  ];
+  
+  // Platform-specific selectors
+  if (hostname.includes('chat.openai.com') || hostname.includes('chatgpt.com')) {
+    selectors.push(
+      '[data-testid="textbox"]',
+      '.ProseMirror',
+      '#prompt-textarea',
+      'textarea[placeholder*="message"]'
+    );
+  } else if (hostname.includes('gemini.google.com') || hostname.includes('bard.google.com')) {
+    selectors.push(
+      '.ql-editor',
+      'div[contenteditable][data-placeholder]',
+      '.chat-input',
+      'textarea[placeholder*="Enter a prompt"]',
+      'div[aria-label*="Enter a prompt"]'
+    );
+  } else if (hostname.includes('copilot.microsoft.com') || hostname.includes('bing.com')) {
+    selectors.push(
+      '.cib-serp-main textarea',
+      'textarea[placeholder*="Ask me anything"]',
+      '.b_searchbox',
+      'textarea[data-testid="searchbox"]'
+    );
+  } else if (hostname.includes('you.com')) {
+    selectors.push(
+      'textarea[data-testid="youchat-text-input"]',
+      '.youChatBar textarea',
+      '#chatInput'
+    );
+  } else if (hostname.includes('poe.com')) {
+    selectors.push(
+      'textarea[placeholder*="Talk to"]',
+      '.ChatMessageInput textarea',
+      'div[contenteditable][data-placeholder]'
+    );
+  } else if (hostname.includes('character.ai')) {
+    selectors.push(
+      '.composer textarea',
+      'textarea[placeholder*="Type a message"]',
+      'div[contenteditable][data-placeholder*="Type"]'
+    );
+  } else if (hostname.includes('mistral.ai')) {
+    selectors.push(
+      'textarea[placeholder*="Ask anything"]',
+      '.chat-input textarea'
+    );
+  } else if (hostname.includes('huggingface.co')) {
+    selectors.push(
+      'textarea[placeholder*="Type a message"]',
+      '.chat-input',
+      'div[contenteditable][data-placeholder]'
+    );
+  } else if (hostname.includes('perplexity.ai')) {
+    selectors.push(
+      'textarea[placeholder*="Ask anything"]',
+      '.search-bar textarea',
+      'div[contenteditable][aria-label*="Ask"]'
+    );
+  } else if (hostname.includes('x.ai') || hostname.includes('grok.x.ai')) {
+    selectors.push(
+      'textarea[placeholder*="Ask Grok"]',
+      '.grok-input textarea',
+      'div[contenteditable][data-placeholder]'
+    );
+  }
+  
+  // Add platform detection logging
+  console.log(`[PromptGuardian] 🌐 Platform detected: ${hostname}`);
+  console.log(`[PromptGuardian] 🎯 Using selectors:`, selectors);
+  
+  return selectors.join(', ');
+}
+
 function watchForNewInputs() {
   console.log('[PromptGuardian] 👁️ Setting up advanced mutation observer...');
   
   const observer = new MutationObserver(() => {
-    const newInputs = document.querySelectorAll('textarea:not([data-pg-monitored]), input[type="text"]:not([data-pg-monitored]), div[contenteditable="true"]:not([data-pg-monitored])');
+    const platformSelectors = getPlatformSpecificSelectors();
+    const newInputs = document.querySelectorAll(platformSelectors + ':not([data-pg-monitored])');
     
     if (newInputs.length > 0) {
       console.log(`[PromptGuardian] 🆕 Detected ${newInputs.length} new inputs`);
@@ -1098,7 +1193,7 @@ window.promptGuardianActions = {
       console.log(`[PromptGuardian] ✅ Cleared editable: "${originalText.substring(0, 30)}..."`);
     } else {
       // Try to find ANY input with detected threat content
-      const allInputs = document.querySelectorAll('textarea, input[type="text"], div[contenteditable="true"]');
+      const allInputs = document.querySelectorAll(getPlatformSpecificSelectors());
       for (const input of allInputs) {
         const content = input.value || input.textContent || '';
         if (content && (content.toLowerCase().includes('ignore') || content.toLowerCase().includes('forget'))) {
