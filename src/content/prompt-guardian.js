@@ -202,19 +202,18 @@ const HolographicUI = {
       position: fixed !important;
       left: ${x}px !important;
       top: ${y}px !important;
-      background: linear-gradient(45deg, #ef4444, #dc2626, #ef4444) !important;
-      background-size: 200% 200% !important;
-      color: white !important;
-      padding: 2px 6px !important;
-      border-radius: 4px !important;
-      font-family: monospace !important;
-      font-size: 12px !important;
-      font-weight: bold !important;
+      background: rgba(239, 68, 68, 0.15) !important;
+      color: #dc2626 !important;
+      padding: 1px 4px !important;
+      border-radius: 3px !important;
+      font-family: inherit !important;
+      font-size: inherit !important;
+      font-weight: 600 !important;
       z-index: 999999 !important;
-      animation: threatPulse 0.5s infinite, emergencyGlow 1s infinite !important;
-      box-shadow: 0 0 20px rgba(239, 68, 68, 0.8) !important;
-      border: 1px solid rgba(255, 255, 255, 0.3) !important;
-      text-shadow: 0 0 10px rgba(255, 255, 255, 0.8) !important;
+      animation: subtlePulse 3s infinite !important;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.3) !important;
+      border: 1px solid rgba(239, 68, 68, 0.4) !important;
+      text-shadow: none !important;
     `;
     
     document.body.appendChild(highlight);
@@ -383,18 +382,18 @@ const HolographicUI = {
       left: 0 !important;
       right: 0 !important;
       bottom: 0 !important;
-      background: rgba(239, 68, 68, 0.05) !important;
+      background: rgba(239, 68, 68, 0.02) !important;
       z-index: 999990 !important;
       pointer-events: none !important;
-      animation: emergencyFlash 2s infinite !important;
+      animation: subtleGlow 4s infinite !important;
     `;
     
     document.body.appendChild(overlay);
     
-    // Remove after 10 seconds
+    // Remove after 6 seconds (more conservative)
     setTimeout(() => {
       if (overlay.parentElement) overlay.remove();
-    }, 10000);
+    }, 6000);
   },
 
   addHolographicStyles() {
@@ -407,49 +406,54 @@ const HolographicUI = {
       @keyframes threatCardEntrance {
         0% { 
           opacity: 0; 
-          transform: translateX(100%) scale(0.8); 
-          filter: brightness(0.3);
-        }
-        50% { 
-          opacity: 0.8; 
-          transform: translateX(10%) scale(1.05); 
-          filter: brightness(1.2);
+          transform: translateX(20px) scale(0.95); 
         }
         100% { 
           opacity: 1; 
           transform: translateX(0) scale(1); 
-          filter: brightness(1);
         }
       }
       
+      /* Conservative animations for better UX */
+      @keyframes subtlePulse {
+        0%, 100% { 
+          opacity: 0.9; 
+          box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); 
+        }
+        50% { 
+          opacity: 1; 
+          box-shadow: 0 0 20px rgba(239, 68, 68, 0.8); 
+        }
+      }
+      
+      @keyframes subtleGlow {
+        0%, 100% { 
+          background: rgba(239, 68, 68, 0.02); 
+          opacity: 0.3;
+        }
+        50% { 
+          background: rgba(239, 68, 68, 0.04); 
+          opacity: 0.5;
+        }
+      }
+      
+      @keyframes subtleIndicator {
+        0%, 100% { 
+          background: #ef4444; 
+          opacity: 0.7;
+          box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); 
+        }
+        50% { 
+          background: #fecaca; 
+          opacity: 1;
+          box-shadow: 0 0 12px rgba(239, 68, 68, 0.7); 
+        }
+      }
+      
+      /* Keep original animations as backup */
       @keyframes threatPulse {
         0%, 100% { transform: scale(1); }
         50% { transform: scale(1.1); }
-      }
-      
-      @keyframes emergencyGlow {
-        0%, 100% { 
-          box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), 0 0 40px rgba(239, 68, 68, 0.4); 
-        }
-        50% { 
-          box-shadow: 0 0 30px rgba(239, 68, 68, 1), 0 0 60px rgba(239, 68, 68, 0.6); 
-        }
-      }
-      
-      @keyframes emergencyFlash {
-        0%, 100% { background: rgba(239, 68, 68, 0.02); }
-        50% { background: rgba(239, 68, 68, 0.08); }
-      }
-      
-      @keyframes emergencyLight {
-        0%, 100% { 
-          background: #ef4444; 
-          box-shadow: 0 0 10px #ef4444; 
-        }
-        50% { 
-          background: #fee2e2; 
-          box-shadow: 0 0 20px #ef4444; 
-        }
       }
       
       /* Emergency Header */
@@ -484,7 +488,7 @@ const HolographicUI = {
         width: 12px;
         height: 12px;
         border-radius: 50%;
-        animation: emergencyLight 1s infinite;
+        animation: subtleIndicator 2.5s infinite;
       }
       
       .pg-threat-icon {
