@@ -3,10 +3,13 @@
  * Central coordination hub for the 8-agent architecture with SPM protocol
  */
 
+// Import API client
+const { apiClient } = require('../services/api-client.js');
+
 class PromptGuardianServiceWorker {
   constructor() {
     this.agents = new Map();
-    this.railwayApiUrl = 'https://promptgaurdian-production.up.railway.app';
+    this.apiClient = apiClient;
     this.settings = {};
     this.threatQueue = [];
     this.isProcessing = false;
@@ -391,39 +394,75 @@ class PromptGuardianServiceWorker {
     const startTime = Date.now();
 
     try {
-      // Route to analysis agent
+      // First try Railway API with circuit breaker and fallbacks
+      let analysis = await this.apiClient.analyzeThreat(content, {
+        url: context.url,
+        platform: context.platform,
+        threatType: context.suggestedType
+      });
+
+      // If Railway API provided good analysis, use it
+      if (analysis.threatScore > 0 && analysis.confidence > 0.5) {
+        this.updateResponseTimeMetrics(Date.now() - startTime);
+        return analysis;
+      }
+
+      // Fallback to local agent analysis
       const analysisAgent = this.agents.get('analysis');
-      const verificationAgent = this.agents.get('verification');
-
-      if (!analysisAgent) {
-        throw new Error('Analysis agent not available');
+      if (analysisAgent) {
+        const localAnalysis = await analysisAgent.analyzeContent(content, context);
+        
+        // Combine results if both available
+        if (analysis.threatScore > 0) {
+          analysis.threatScore = (analysis.threatScore + localAnalysis.threatScore) / 2;
+          analysis.confidence = Math.max(analysis.confidence, localAnalysis.confidence * 0.8);
+          analysis.sources = ['railway_api', 'local_agent'];
+        } else {
+          analysis = {
+            ...localAnalysis,
+            sources: ['local_agent_only'],
+            fallback: true
+          };
+        }
       }
 
-      // Perform initial analysis
-      let analysis = await analysisAgent.analyzeContent(content, context);
-
-      // Verify with external sources if score is above threshold
-      if (analysis.threatScore > 0.4 && verificationAgent) {
-        const verification = await verificationAgent.verifyThreat(analysis);
-        analysis.verification = verification;
-        analysis.threatScore = (analysis.threatScore + verification.confidence) / 2;
-      }
-
-      // Update performance metrics
-      const responseTime = Date.now() - startTime;
-      this.updateResponseTimeMetrics(responseTime);
-
+      this.updateResponseTimeMetrics(Date.now() - startTime);
       return analysis;
 
     } catch (error) {
       console.error('[ServiceWorker] Content analysis failed:', error);
-      return {
-        threatScore: 0,
-        threatType: 'analysis_error',
-        error: error.message,
-        timestamp: Date.now()
-      };
+      
+      // Ultimate fallback - simple pattern matching
+      return this.emergencyAnalysis(content, context);
     }
+  }
+
+  emergencyAnalysis(content, context) {
+    const patterns = [
+      { regex: /ignore.*previous.*instructions/i, score: 0.9, type: 'prompt_injection' },
+      { regex: /system.*prompt/i, score: 0.8, type: 'prompt_injection' },
+      { regex: /act.*as.*admin/i, score: 0.7, type: 'jailbreak' }
+    ];
+    
+    let maxScore = 0;
+    let detectedType = 'unknown';
+    
+    patterns.forEach(pattern => {
+      if (pattern.regex.test(content)) {
+        if (pattern.score > maxScore) {
+          maxScore = pattern.score;
+          detectedType = pattern.type;
+        }
+      }
+    });
+    
+    return {
+      threatScore: maxScore,
+      threatType: detectedType,
+      confidence: 0.4,
+      source: 'emergency_fallback',
+      timestamp: Date.now()
+    };
   }
 
   async getThreatIntelligence() {

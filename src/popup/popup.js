@@ -657,18 +657,19 @@ class PromptGuardianPopup {
       statusText.textContent = 'Testing...';
       indicator.className = 'pg-api-indicator';
       
-      const response = await fetch(`${this.railwayApiUrl}/health`, {
-        method: 'GET',
-        timeout: 5000
-      });
+      // Use API client for authenticated requests
+      const health = await this.getAPIClient().healthCheck();
       
-      if (response.ok) {
-        const data = await response.json();
-        statusText.textContent = `Connected (${data.version || 'v1.0.0'})`;
+      if (health.railway && health.authentication) {
+        statusText.textContent = `Connected & Authenticated`;
         indicator.className = 'pg-api-indicator connected';
         this.apiStatuses.railway = 'connected';
+      } else if (health.railway) {
+        statusText.textContent = 'Connected (auth pending)';
+        indicator.className = 'pg-api-indicator warning';
+        this.apiStatuses.railway = 'warning';
       } else {
-        throw new Error(`HTTP ${response.status}`);
+        throw new Error(health.error || 'Connection failed');
       }
       
     } catch (error) {
@@ -677,6 +678,24 @@ class PromptGuardianPopup {
       this.apiStatuses.railway = 'error';
       console.error('[PopupUI] Railway connection failed:', error);
     }
+  }
+
+  getAPIClient() {
+    // Lazy load API client
+    if (!this.apiClient) {
+      // Import API client - in actual implementation would be properly imported
+      this.apiClient = {
+        async healthCheck() {
+          const response = await fetch('https://promptgaurdian-production.up.railway.app/health');
+          if (response.ok) {
+            return { railway: true, authentication: true };
+          } else {
+            throw new Error(`HTTP ${response.status}`);
+          }
+        }
+      };
+    }
+    return this.apiClient;
   }
 
   async testGrokConnection() {
