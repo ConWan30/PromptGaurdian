@@ -59,27 +59,44 @@ app.use(helmet({
 }));
 app.use(contentSecurityPolicy);
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow chrome-extension origins and configured domains
-    const allowedOrigins = [
-      ...(process.env.ALLOWED_ORIGINS?.split(',') || []),
-      /^chrome-extension:\/\//,
-      /^moz-extension:\/\//
-    ];
-    
-    if (!origin || allowedOrigins.some(allowed => {
-      if (typeof allowed === 'string') return allowed === origin;
-      return allowed.test(origin);
-    })) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  optionsSuccessStatus: 200
-}));
+// Simplified CORS for Railway deployment
+if (process.env.NODE_ENV === 'production') {
+  // Very permissive CORS for production Railway deployment
+  app.use(cors({
+    origin: true, // Allow all origins in production
+    credentials: true,
+    optionsSuccessStatus: 200
+  }));
+  console.log('[CORS] Production mode: allowing all origins');
+} else {
+  // Restricted CORS for development
+  app.use(cors({
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        ...(process.env.ALLOWED_ORIGINS?.split(',') || []),
+        /^chrome-extension:\/\//,
+        /^moz-extension:\/\//,
+        'https://promptgaurdian-production.up.railway.app',
+        'https://claude.ai',
+        'https://chat.openai.com',
+        'https://bard.google.com'
+      ];
+      
+      if (!origin || allowedOrigins.some(allowed => {
+        if (typeof allowed === 'string') return allowed === origin;
+        return allowed.test(origin);
+      })) {
+        callback(null, true);
+      } else {
+        console.log('[CORS] Rejected origin:', origin);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    optionsSuccessStatus: 200
+  }));
+  console.log('[CORS] Development mode: restricted origins');
+}
 
 app.use(express.json({ 
   limit: '10mb',
@@ -274,6 +291,16 @@ app.get('/features', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
+  
+  // Handle CORS errors specifically
+  if (err.message === 'Not allowed by CORS') {
+    return res.status(403).json({
+      error: 'CORS error',
+      message: 'Origin not allowed',
+      origin: req.headers.origin
+    });
+  }
+  
   res.status(500).json({ 
     error: 'Internal server error',
     message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
@@ -289,6 +316,14 @@ app.use('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`PromptGuardian Backend running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Working directory: ${process.cwd()}`);
+  console.log(`API endpoints available:`);
+  console.log(`  - GET /health - Health check`);
+  console.log(`  - GET /about - Service information`);
+  console.log(`  - GET /features - Features list`);
+  console.log(`  - POST /proxy/analyze-threat - Threat analysis`);
+  console.log(`  - GET /proxy/status - API status`);
+  console.log(`Server ready for requests!`);
 });
 
 module.exports = app;
