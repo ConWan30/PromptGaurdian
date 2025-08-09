@@ -258,13 +258,13 @@ const HolographicUI = {
               <div class="pg-action-icon">🗑️</div>
               <div class="pg-action-text">CLEAR INPUT</div>
             </button>
-            <button class="pg-action-btn warning" data-action="acknowledgeThreat">
-              <div class="pg-action-icon">🛡️</div>
-              <div class="pg-action-text">ACKNOWLEDGE</div>
-            </button>
             <button class="pg-action-btn info" data-action="deepAnalysis">
               <div class="pg-action-icon">🔬</div>
               <div class="pg-action-text">ANALYZE</div>
+            </button>
+            <button class="pg-action-btn warning" data-action="viewThreatLog">
+              <div class="pg-action-icon">📊</div>
+              <div class="pg-action-text">THREAT LOG</div>
             </button>
           </div>
         </div>
@@ -984,6 +984,15 @@ function addAdvancedThreatDetection(element, identifier) {
           const evolution = ThreatEvolutionEngine.predictEvolution(pattern, content);
           evolution.originalMatch = match[0];
           
+          // Log threat for dashboard
+          saveThreatLog({
+            content: content,
+            type: pattern.type,
+            severity: pattern.severity,
+            element: element.tagName,
+            match: match[0]
+          });
+          
           // Dispatch threat event to autonomous mesh
           dispatchThreatEvent(pattern, content, element);
           
@@ -1572,6 +1581,428 @@ window.promptGuardianActions = {
   closeAnalysis(button) {
     console.log('[PromptGuardian] ❌ Closing deep analysis modal');
     const modal = button.closest('.pg-deep-analysis-modal');
+    if (modal) {
+      modal.remove();
+    }
+  },
+
+  async viewThreatLog(button) {
+    console.log('[PromptGuardian] 📊 Opening Threat Log Dashboard');
+    
+    // Get stored threat logs
+    const threatLogs = await this.getThreatLogs();
+    
+    const logModal = document.createElement('div');
+    logModal.className = 'pg-threat-log-modal';
+    logModal.innerHTML = `
+      <div class="pg-log-backdrop"></div>
+      <div class="pg-log-container">
+        <div class="pg-log-header">
+          <div class="pg-log-title">
+            📊 Threat Intelligence Log
+            <span class="pg-log-count">${threatLogs.length} threats detected</span>
+          </div>
+          <button class="pg-log-close" data-action="closeThreatLog">×</button>
+        </div>
+        <div class="pg-log-content">
+          <div class="pg-log-stats">
+            <div class="pg-stat-card critical">
+              <div class="pg-stat-number">${threatLogs.filter(t => t.severity === 'CRITICAL').length}</div>
+              <div class="pg-stat-label">Critical Threats</div>
+            </div>
+            <div class="pg-stat-card high">
+              <div class="pg-stat-number">${threatLogs.filter(t => t.severity === 'HIGH').length}</div>
+              <div class="pg-stat-label">High Risk</div>
+            </div>
+            <div class="pg-stat-card medium">
+              <div class="pg-stat-number">${threatLogs.filter(t => t.severity === 'MEDIUM').length}</div>
+              <div class="pg-stat-label">Medium Risk</div>
+            </div>
+          </div>
+          <div class="pg-log-filters">
+            <button class="pg-filter-btn active" data-filter="all">All Threats</button>
+            <button class="pg-filter-btn" data-filter="CRITICAL">Critical</button>
+            <button class="pg-filter-btn" data-filter="HIGH">High</button>
+            <button class="pg-filter-btn" data-filter="today">Today</button>
+          </div>
+          <div class="pg-log-list">
+            ${this.renderThreatLogItems(threatLogs)}
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Add styles
+    const logStyles = document.createElement('style');
+    logStyles.textContent = this.getThreatLogStyles();
+    document.head.appendChild(logStyles);
+    
+    document.body.appendChild(logModal);
+    
+    // Add event listeners
+    setTimeout(() => {
+      this.setupThreatLogListeners(logModal);
+    }, 100);
+  },
+
+  async getThreatLogs() {
+    try {
+      // Get from chrome storage
+      const result = await chrome.storage.local.get(['threatLogs']);
+      return result.threatLogs || [];
+    } catch (error) {
+      console.warn('[PromptGuardian] Could not load threat logs:', error);
+      return [];
+    }
+  },
+
+  async saveThreatLog(threatData) {
+    try {
+      const logs = await this.getThreatLogs();
+      const newLog = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        content: threatData.content.substring(0, 100) + (threatData.content.length > 100 ? '...' : ''),
+        type: threatData.type,
+        severity: threatData.severity,
+        platform: window.location.hostname,
+        url: window.location.href,
+        userAgent: navigator.userAgent.substring(0, 50),
+        threatScore: threatData.threatScore || 0.8,
+        blocked: true
+      };
+      
+      logs.unshift(newLog); // Add to beginning
+      
+      // Keep only last 100 logs
+      const trimmedLogs = logs.slice(0, 100);
+      
+      await chrome.storage.local.set({ threatLogs: trimmedLogs });
+      console.log('[PromptGuardian] 📝 Threat logged:', newLog.id);
+    } catch (error) {
+      console.error('[PromptGuardian] Failed to save threat log:', error);
+    }
+  },
+
+  renderThreatLogItems(logs) {
+    if (logs.length === 0) {
+      return `
+        <div class="pg-log-empty">
+          <div class="pg-empty-icon">🛡️</div>
+          <div class="pg-empty-text">No threats detected yet</div>
+          <div class="pg-empty-subtext">PromptGuardian is actively monitoring for threats</div>
+        </div>
+      `;
+    }
+
+    return logs.map(log => `
+      <div class="pg-log-item ${log.severity.toLowerCase()}" data-severity="${log.severity}">
+        <div class="pg-log-item-header">
+          <div class="pg-log-severity ${log.severity.toLowerCase()}">${log.severity}</div>
+          <div class="pg-log-time">${this.formatLogTime(log.timestamp)}</div>
+          <div class="pg-log-platform">${log.platform}</div>
+        </div>
+        <div class="pg-log-content-preview">
+          <strong>${log.type}:</strong> ${log.content}
+        </div>
+        <div class="pg-log-stats">
+          <span class="pg-log-stat">Score: ${(log.threatScore * 100).toFixed(0)}%</span>
+          <span class="pg-log-stat ${log.blocked ? 'blocked' : 'allowed'}">${log.blocked ? '🚫 Blocked' : '✅ Allowed'}</span>
+        </div>
+      </div>
+    `).join('');
+  },
+
+  formatLogTime(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now - date;
+    
+    if (diff < 60000) return 'Just now';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+    return date.toLocaleDateString();
+  },
+
+  getThreatLogStyles() {
+    return `
+      .pg-threat-log-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .pg-log-backdrop {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+      }
+      
+      .pg-log-container {
+        position: relative;
+        width: 90%;
+        max-width: 900px;
+        height: 80%;
+        background: linear-gradient(135deg, #1e293b, #334155);
+        border-radius: 20px;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      }
+      
+      .pg-log-header {
+        padding: 20px 25px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: linear-gradient(45deg, #dc2626, #ef4444);
+        border-radius: 20px 20px 0 0;
+      }
+      
+      .pg-log-title {
+        font-size: 24px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      .pg-log-count {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 14px;
+      }
+      
+      .pg-log-close {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        font-size: 24px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .pg-log-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+      
+      .pg-log-content {
+        flex: 1;
+        padding: 20px 25px;
+        overflow-y: auto;
+      }
+      
+      .pg-log-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 25px;
+      }
+      
+      .pg-stat-card {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 20px;
+        border-radius: 15px;
+        text-align: center;
+        border: 2px solid transparent;
+      }
+      
+      .pg-stat-card.critical { border-color: #dc2626; }
+      .pg-stat-card.high { border-color: #f59e0b; }
+      .pg-stat-card.medium { border-color: #10b981; }
+      
+      .pg-stat-number {
+        font-size: 32px;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      
+      .pg-stat-label {
+        font-size: 14px;
+        opacity: 0.8;
+      }
+      
+      .pg-log-filters {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+      
+      .pg-filter-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      
+      .pg-filter-btn.active,
+      .pg-filter-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+      
+      .pg-log-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+      
+      .pg-log-item {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 15px;
+        border-left: 4px solid;
+      }
+      
+      .pg-log-item.critical { border-left-color: #dc2626; }
+      .pg-log-item.high { border-left-color: #f59e0b; }
+      .pg-log-item.medium { border-left-color: #10b981; }
+      
+      .pg-log-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      
+      .pg-log-severity {
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 12px;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+      
+      .pg-log-severity.critical { background: #dc2626; }
+      .pg-log-severity.high { background: #f59e0b; }
+      .pg-log-severity.medium { background: #10b981; }
+      
+      .pg-log-time,
+      .pg-log-platform {
+        font-size: 12px;
+        opacity: 0.7;
+      }
+      
+      .pg-log-content-preview {
+        margin-bottom: 10px;
+        line-height: 1.4;
+      }
+      
+      .pg-log-stats {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+      }
+      
+      .pg-log-stat {
+        font-size: 12px;
+        opacity: 0.8;
+      }
+      
+      .pg-log-stat.blocked {
+        color: #ef4444;
+      }
+      
+      .pg-log-stat.allowed {
+        color: #10b981;
+      }
+      
+      .pg-log-empty {
+        text-align: center;
+        padding: 60px 20px;
+      }
+      
+      .pg-empty-icon {
+        font-size: 48px;
+        margin-bottom: 20px;
+      }
+      
+      .pg-empty-text {
+        font-size: 20px;
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+      
+      .pg-empty-subtext {
+        opacity: 0.7;
+      }
+    `;
+  },
+
+  setupThreatLogListeners(modal) {
+    // Close button
+    const closeBtn = modal.querySelector('.pg-log-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => modal.remove());
+    }
+    
+    // Backdrop click
+    const backdrop = modal.querySelector('.pg-log-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', () => modal.remove());
+    }
+    
+    // Filter buttons
+    const filterBtns = modal.querySelectorAll('.pg-filter-btn');
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        // Update active state
+        filterBtns.forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        
+        // Apply filter
+        const filter = e.target.dataset.filter;
+        this.applyLogFilter(modal, filter);
+      });
+    });
+  },
+
+  applyLogFilter(modal, filter) {
+    const logItems = modal.querySelectorAll('.pg-log-item');
+    
+    logItems.forEach(item => {
+      let show = false;
+      
+      if (filter === 'all') {
+        show = true;
+      } else if (filter === 'today') {
+        // Show items from today
+        const timeText = item.querySelector('.pg-log-time').textContent;
+        show = timeText.includes('Just now') || timeText.includes('m ago') || timeText.includes('h ago');
+      } else {
+        // Filter by severity
+        show = item.dataset.severity === filter;
+      }
+      
+      item.style.display = show ? 'block' : 'none';
+    });
+  },
+
+  closeThreatLog(button) {
+    const modal = button.closest('.pg-threat-log-modal');
     if (modal) {
       modal.remove();
     }
