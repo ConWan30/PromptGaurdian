@@ -181,20 +181,32 @@ class PromptGuardianServiceWorker {
 
   initializeSPMProtocol() {
     // Secure Prompt Mesh (SPM) Protocol initialization
+    if (!this.spmMesh) {
+      console.error('[SPM] Error: spmMesh not initialized');
+      return;
+    }
+    
     this.spmMesh.sessionId = this.generateSessionId();
     this.spmMesh.protocolVersion = '1.0.0';
     this.spmMesh.encryptionKey = this.generateEncryptionKey();
     
+    // Ensure nodes Map exists
+    if (!this.spmMesh.nodes) {
+      this.spmMesh.nodes = new Map();
+    }
+    
     // Register all agents in the mesh
-    this.agents.forEach((agent, id) => {
-      this.spmMesh.nodes.set(id, {
-        agent: agent,
-        status: 'active',
-        lastSeen: Date.now(),
-        messageCount: 0,
-        processingLoad: 0
+    if (this.agents) {
+      this.agents.forEach((agent, id) => {
+        this.spmMesh.nodes.set(id, {
+          agent: agent,
+          status: 'active',
+          lastSeen: Date.now(),
+          messageCount: 0,
+          processingLoad: 0
+        });
       });
-    });
+    }
 
     console.log(`[SPM] Initialized mesh with ${this.spmMesh.nodes.size} nodes`);
     this.startSPMHeartbeat();
@@ -572,10 +584,12 @@ class PromptGuardianServiceWorker {
       await target.handleSPMMessage(messageType, payload, sourceAgent);
       
       // Update mesh statistics
-      const node = this.spmMesh.nodes.get(targetAgent);
-      if (node) {
-        node.messageCount++;
-        node.lastSeen = Date.now();
+      if (this.spmMesh && this.spmMesh.nodes) {
+        const node = this.spmMesh.nodes.get(targetAgent);
+        if (node) {
+          node.messageCount++;
+          node.lastSeen = Date.now();
+        }
       }
     } else {
       console.warn(`[SPM] Target agent ${targetAgent} not found`);
@@ -584,19 +598,23 @@ class PromptGuardianServiceWorker {
 
   startSPMHeartbeat() {
     setInterval(() => {
-      this.spmMesh.lastHeartbeat = Date.now();
-      
-      // Check agent health
-      this.smpMesh.nodes.forEach((node, agentId) => {
-        const timeSinceLastSeen = Date.now() - node.lastSeen;
+      if (this.spmMesh) {
+        this.spmMesh.lastHeartbeat = Date.now();
         
-        if (timeSinceLastSeen > 60000) { // 1 minute timeout
-          console.warn(`[SPM] Agent ${agentId} appears inactive`);
-          node.status = 'inactive';
-        } else {
-          node.status = 'active';
+        // Check agent health
+        if (this.spmMesh.nodes) {
+          this.spmMesh.nodes.forEach((node, agentId) => {
+            const timeSinceLastSeen = Date.now() - node.lastSeen;
+            
+            if (timeSinceLastSeen > 60000) { // 1 minute timeout
+              console.warn(`[SPM] Agent ${agentId} appears inactive`);
+              node.status = 'inactive';
+            } else {
+              node.status = 'active';
+            }
+          });
         }
-      });
+      }
 
     }, 30000); // Heartbeat every 30 seconds
   }

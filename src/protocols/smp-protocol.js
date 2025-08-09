@@ -429,6 +429,92 @@ class SecureMeshProtocol {
     return { error: 'No verification agent available' };
   }
 
+  async handleAnalysisResponse(message) {
+    console.log(`[SMP] 📊 Analysis response: ${message.payload.coordinationId}`);
+    
+    // Process analysis response
+    const response = message.payload;
+    this.messageHistory.push({
+      type: 'ANALYSIS_RESPONSE',
+      timestamp: Date.now(),
+      data: response
+    });
+    
+    return { received: true };
+  }
+
+  async handleVerificationResponse(message) {
+    console.log(`[SMP] ✅ Verification response: ${message.payload.coordinationId}`);
+    
+    // Process verification response
+    const response = message.payload;
+    this.messageHistory.push({
+      type: 'VERIFICATION_RESPONSE',
+      timestamp: Date.now(),
+      data: response
+    });
+    
+    return { received: true };
+  }
+
+  async handleMeshSync(message) {
+    console.log(`[SMP] 🔄 Mesh sync request from: ${message.source.nodeId}`);
+    
+    // Synchronize mesh state
+    const { nodes, topology } = message.payload;
+    
+    if (nodes) {
+      nodes.forEach(nodeInfo => {
+        this.connectedNodes.set(nodeInfo.nodeId, nodeInfo);
+      });
+    }
+    
+    if (topology) {
+      topology.forEach(connection => {
+        this.meshTopology.add(connection);
+      });
+    }
+    
+    return {
+      status: 'synced',
+      nodeId: this.nodeId,
+      activeAgents: Array.from(this.activeAgents.keys())
+    };
+  }
+
+  async handleNodeHeartbeat(message) {
+    const { nodeId, timestamp } = message.payload;
+    
+    if (this.connectedNodes.has(nodeId)) {
+      const node = this.connectedNodes.get(nodeId);
+      node.lastSeen = timestamp;
+      node.status = 'active';
+    }
+    
+    return { acknowledged: true, timestamp: Date.now() };
+  }
+
+  async handleAutonomousCoordination(message) {
+    console.log(`[SMP] 🤖 Autonomous coordination request: ${message.type}`);
+    
+    // Handle autonomous coordination commands
+    const { command, parameters } = message.payload;
+    
+    switch (command) {
+      case 'threat_analysis':
+        if (this.config.autonomousMode) {
+          return await this.autonomousCoordinator.coordinateAnalysis(parameters);
+        }
+        break;
+      case 'mesh_status':
+        return this.getProtocolStatus();
+      default:
+        return { error: `Unknown coordination command: ${command}` };
+    }
+    
+    return { processed: true };
+  }
+
   // Utility Methods
 
   registerHandler(messageType, handler) {

@@ -7,7 +7,7 @@ console.log('[PromptGuardian] 🛡️ Next-Gen Threat Detection Loading...');
 console.log('[PromptGuardian] Current URL:', window.location.href);
 
 // Advanced threat detection with evolution prediction
-const ThreatEvolutionEngine = {
+const ThreatEvolutionEngine = window.ThreatEvolutionEngine || {
   // Core threat patterns with evolution trees
   patterns: [
     {
@@ -118,6 +118,9 @@ const ThreatEvolutionEngine = {
     };
   }
 };
+
+// Store globally to prevent redeclaration errors
+window.ThreatEvolutionEngine = ThreatEvolutionEngine;
 
 // Holographic UI system
 const HolographicUI = {
