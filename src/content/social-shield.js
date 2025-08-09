@@ -42,6 +42,7 @@ class SocialShieldContent {
       
       // Set up UI components
       this.createThreatOverlay();
+      this.createSocialShieldIndicator();
       this.setupKeyboardShortcuts();
       
       // Start monitoring social feeds
@@ -1159,6 +1160,69 @@ class SocialShieldContent {
     const textHash = btoa(text.slice(0, 50)).slice(0, 16);
     return `post_${textHash}_${Date.now()}`;
   }
+
+  createSocialShieldIndicator() {
+    // Remove existing indicator
+    const existing = document.getElementById('socialshield-indicator');
+    if (existing) existing.remove();
+    
+    const indicator = document.createElement('div');
+    indicator.id = 'socialshield-indicator';
+    indicator.innerHTML = '🛡️ SocialShield';
+    
+    indicator.style.cssText = `
+      position: fixed !important;
+      bottom: 20px !important;
+      left: 20px !important;
+      background: linear-gradient(135deg, #1da1f2, #0d8bd9) !important;
+      color: white !important;
+      padding: 8px 16px !important;
+      border-radius: 20px !important;
+      font-size: 12px !important;
+      font-weight: 700 !important;
+      z-index: 999999 !important;
+      box-shadow: 0 4px 12px rgba(29, 161, 242, 0.3) !important;
+      cursor: pointer !important;
+      user-select: none !important;
+      transition: all 0.3s ease !important;
+      animation: socialShieldPulse 3s infinite !important;
+    `;
+    
+    // Add click handler to show status
+    indicator.addEventListener('click', () => {
+      this.showSocialShieldStatus();
+    });
+    
+    // Add pulsing animation
+    if (!document.getElementById('socialshield-styles')) {
+      const style = document.createElement('style');
+      style.id = 'socialshield-styles';
+      style.textContent = `
+        @keyframes socialShieldPulse {
+          0%, 100% { transform: scale(1); box-shadow: 0 4px 12px rgba(29, 161, 242, 0.3); }
+          50% { transform: scale(1.05); box-shadow: 0 6px 16px rgba(29, 161, 242, 0.5); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(indicator);
+    
+    // Show activation message
+    this.showMessage('🛡️ SocialShield Active - X/Twitter monitoring enabled', 'success');
+  },
+
+  showSocialShieldStatus() {
+    const status = `
+🛡️ SocialShield Status
+Platform: ${this.platform.toUpperCase()}
+Agents: ${this.agents.size} active
+Posts Scanned: ${this.scannedPosts ? 'Active' : '0'}
+Threats Detected: Loading...
+Real-time: ✅ Online
+`;
+    this.showMessage(status, 'info');
+  },
 
   createThreatOverlay() {
     if (this.threatOverlay) return;

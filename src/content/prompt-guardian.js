@@ -209,7 +209,7 @@ const HolographicUI = {
       font-family: inherit !important;
       font-size: inherit !important;
       font-weight: 600 !important;
-      z-index: 999999 !important;
+      z-index: 9999998 !important;
       animation: subtlePulse 3s infinite !important;
       box-shadow: 0 0 8px rgba(239, 68, 68, 0.3) !important;
       border: 1px solid rgba(239, 68, 68, 0.4) !important;
@@ -312,7 +312,7 @@ const HolographicUI = {
         0 0 30px rgba(239, 68, 68, 0.5),
         0 0 60px rgba(220, 38, 38, 0.2),
         inset 0 0 15px rgba(255, 255, 255, 0.1) !important;
-      z-index: 999997 !important;
+      z-index: 9999999 !important;
       font-family: 'Segoe UI', Arial, sans-serif !important;
       animation: threatCardEntrance 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
       backdrop-filter: blur(10px) !important;
@@ -1130,51 +1130,16 @@ function clearCurrentInput() {
 }
 
 // Global action functions for holographic card buttons
+// Global saveThreatLog function  
+async function saveThreatLog(threatData) {
+  if (window.promptGuardianActions && window.promptGuardianActions.saveThreatLog) {
+    return await window.promptGuardianActions.saveThreatLog(threatData);
+  } else {
+    console.warn('[PromptGuardian] Threat logging not available');
+  }
+}
+
 window.promptGuardianActions = {
-  acknowledgeThreat(button) {
-    console.log('[PromptGuardian] 🚨 Threat acknowledged by user');
-    
-    // IMMEDIATELY remove all threat overlays
-    document.querySelectorAll('.pg-threat-highlight, .pg-holographic-card, #pg-emergency-overlay').forEach(el => {
-      el.remove();
-    });
-    
-    // Show brief acknowledgment feedback
-    const feedback = document.createElement('div');
-    feedback.innerHTML = '🛡️ ACKNOWLEDGED';
-    feedback.style.cssText = `
-      position: fixed !important;
-      top: 30% !important;
-      right: 30px !important;
-      background: linear-gradient(45deg, #10b981, #059669) !important;
-      color: white !important;
-      padding: 8px 16px !important;
-      border-radius: 6px !important;
-      font-weight: bold !important;
-      font-size: 12px !important;
-      z-index: 999999 !important;
-      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4) !important;
-      animation: quickFeedback 1.5s ease-out forwards !important;
-    `;
-    
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes quickFeedback {
-        0% { opacity: 0; transform: translateX(20px); }
-        20% { opacity: 1; transform: translateX(0); }
-        80% { opacity: 1; transform: translateX(0); }
-        100% { opacity: 0; transform: translateX(-20px); }
-      }
-    `;
-    document.head.appendChild(style);
-    
-    document.body.appendChild(feedback);
-    
-    setTimeout(() => {
-      if (feedback.parentElement) feedback.remove();
-      if (style.parentElement) style.remove();
-    }, 1500);
-  },
   
   clearInput(button) {
     console.log('[PromptGuardian] 🗑️ Clearing dangerous input content');
