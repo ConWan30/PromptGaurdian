@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PromptGuardian Icon Generator</title>
+</head>
+<body>
+    <canvas id="canvas" style="border: 1px solid #ccc;"></canvas>
+    <div>
+        <button onclick="generateIcon(16)">Generate 16x16</button>
+        <button onclick="generateIcon(48)">Generate 48x48</button>
+        <button onclick="generateIcon(128)">Generate 128x128</button>
+        <button onclick="downloadAll()">Download All Icons</button>
+    </div>
+    
+    <script>
+        function generateIcon(size) {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = size;
+            canvas.height = size;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+            
+            // Background gradient (shield-like)
+            const gradient = ctx.createLinearGradient(0, 0, 0, size);
+            gradient.addColorStop(0, '#4CAF50'); // Green
+            gradient.addColorStop(1, '#2E7D32'); // Darker green
+            
+            // Draw shield background
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.moveTo(size/2, size * 0.1);
+            ctx.lineTo(size * 0.9, size * 0.3);
+            ctx.lineTo(size * 0.9, size * 0.7);
+            ctx.lineTo(size/2, size * 0.95);
+            ctx.lineTo(size * 0.1, size * 0.7);
+            ctx.lineTo(size * 0.1, size * 0.3);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Add border
+            ctx.strokeStyle = '#1B5E20';
+            ctx.lineWidth = Math.max(1, size / 32);
+            ctx.stroke();
+            
+            // Add checkmark or "P" for PromptGuardian
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.4}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('P', size/2, size/2);
+            
+            // Download the icon
+            const link = document.createElement('a');
+            link.download = `icon-${size}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        function downloadAll() {
+            setTimeout(() => generateIcon(16), 100);
+            setTimeout(() => generateIcon(48), 300);
+            setTimeout(() => generateIcon(128), 500);
+        }
+    </script>
+</body>
+</html>

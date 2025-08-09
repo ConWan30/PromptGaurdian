@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <defs>
+    <linearGradient id="shieldGradient16" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D2FF;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#3A7BD5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E3A8A;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="innerGlow16" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0.2" />
+    </linearGradient>
+    <filter id="glow16">
+      <feGaussianBlur stdDeviation="0.5" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadow16" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Outer shield glow -->
+  <path d="M8 0.5 L14 3 L14 10 L8 15.5 L2 10 L2 3 Z" fill="url(#shieldGradient16)" filter="url(#shadow16)" opacity="0.9"/>
+  
+  <!-- Main shield -->
+  <path d="M8 1 L13.5 3.2 L13.5 9.8 L8 15 L2.5 9.8 L2.5 3.2 Z" fill="url(#shieldGradient16)" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+  
+  <!-- Inner highlight -->
+  <path d="M8 1.5 L12.8 3.5 L12.8 9.5 L8 14.2 L3.2 9.5 L3.2 3.5 Z" fill="url(#innerGlow16)" opacity="0.4"/>
+  
+  <!-- AI Circuit pattern -->
+  <g opacity="0.8" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="0.3">
+    <circle cx="8" cy="5" r="1" fill="rgba(255,255,255,0.9)"/>
+    <circle cx="6" cy="8" r="0.8" fill="rgba(0,210,255,0.8)"/>
+    <circle cx="10" cy="8" r="0.8" fill="rgba(0,210,255,0.8)"/>
+    <line x1="8" y1="6" x2="6" y2="7.2"/>
+    <line x1="8" y1="6" x2="10" y2="7.2"/>
+    <line x1="6" y1="8.8" x2="8" y2="11"/>
+    <line x1="10" y1="8.8" x2="8" y2="11"/>
+  </g>
+  
+  <!-- Center guardian symbol -->
+  <text x="8" y="12" font-family="Arial, sans-serif" font-size="3" font-weight="bold" text-anchor="middle" fill="#FFFFFF" opacity="0.95" filter="url(#glow16)">G</text>
+</svg>

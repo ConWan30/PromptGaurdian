@@ -1321,3 +1321,41 @@ body {
 .pg-mb-4 {
     margin-bottom: 16px;
 }
+
+/* CRITICAL FIX: Stop UI Glitching and Shaking */
+.pg-container, .pg-container * {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    -moz-backface-visibility: hidden;
+    -ms-backface-visibility: hidden;
+    will-change: auto;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+}
+
+/* Disable problematic animations during updates */
+.pg-status-dot {
+    animation: none !important; /* Disable pulse animation that causes shaking */
+}
+
+.pg-metric-card:hover, .pg-stat-card:hover, .pg-platform-card:hover {
+    transform: none !important; /* Disable hover transforms during updates */
+}
+
+/* Force stable positioning */
+body, html {
+    position: relative !important;
+    overflow: hidden !important;
+    height: 420px !important;
+    width: 420px !important;
+}
+
+/* Prevent layout shifts during content updates */
+.pg-tab-content {
+    min-height: 300px;
+    position: relative;
+}
+
+.pg-loading-spinner {
+    animation-duration: 2s !important; /* Slow down spinner */
+}

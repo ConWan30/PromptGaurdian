@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="shieldGradient48" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D2FF;stop-opacity:1" />
+      <stop offset="25%" style="stop-color:#3A7BD5;stop-opacity:1" />
+      <stop offset="75%" style="stop-color:#1E3A8A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0F172A;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="centerGlow48" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0" />
+    </radialGradient>
+    <linearGradient id="metallic48" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#E5E7EB;stop-opacity:0.9" />
+      <stop offset="50%" style="stop-color:#9CA3AF;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#374151;stop-opacity:0.8" />
+    </linearGradient>
+    <filter id="glow48" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadow48" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+    <filter id="innerShadow48" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="1"/>
+      <feGaussianBlur stdDeviation="1" result="offset-blur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.2"/>
+      <feComposite in2="offset-blur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background circular glow -->
+  <circle cx="24" cy="24" r="20" fill="rgba(0,210,255,0.1)" filter="url(#glow48)"/>
+  
+  <!-- Main shield body -->
+  <path d="M24 2 L42 9 L42 30 L24 46 L6 30 L6 9 Z" fill="url(#shieldGradient48)" filter="url(#shadow48)"/>
+  
+  <!-- Shield border with metallic finish -->
+  <path d="M24 2 L42 9 L42 30 L24 46 L6 30 L6 9 Z" fill="none" stroke="url(#metallic48)" stroke-width="1.5" opacity="0.8"/>
+  
+  <!-- Inner shield highlight -->
+  <path d="M24 4 L40 10.5 L40 29 L24 43.5 L8 29 L8 10.5 Z" fill="url(#centerGlow48)" opacity="0.6"/>
+  
+  <!-- Advanced AI Neural Network Pattern -->
+  <g opacity="0.85" stroke="rgba(255,255,255,0.9)" stroke-width="0.8" fill="none">
+    <!-- Central processing node -->
+    <circle cx="24" cy="20" r="3" fill="rgba(255,255,255,0.95)" stroke="rgba(0,210,255,1)" stroke-width="1"/>
+    
+    <!-- Secondary nodes -->
+    <circle cx="16" cy="28" r="2.5" fill="rgba(0,210,255,0.8)" stroke="rgba(255,255,255,0.7)"/>
+    <circle cx="32" cy="28" r="2.5" fill="rgba(0,210,255,0.8)" stroke="rgba(255,255,255,0.7)"/>
+    <circle cx="12" cy="16" r="2" fill="rgba(58,123,213,0.8)"/>
+    <circle cx="36" cy="16" r="2" fill="rgba(58,123,213,0.8)"/>
+    
+    <!-- Neural connections -->
+    <line x1="24" y1="23" x2="16" y2="25.5" stroke="rgba(0,210,255,0.9)" stroke-width="1"/>
+    <line x1="24" y1="23" x2="32" y2="25.5" stroke="rgba(0,210,255,0.9)" stroke-width="1"/>
+    <line x1="21" y1="18" x2="14" y2="16" stroke="rgba(255,255,255,0.7)"/>
+    <line x1="27" y1="18" x2="34" y2="16" stroke="rgba(255,255,255,0.7)"/>
+    
+    <!-- Data flow lines -->
+    <path d="M16 30.5 Q24 35 32 30.5" stroke="rgba(0,210,255,0.7)" stroke-width="1" fill="none"/>
+    <path d="M12 18 Q24 12 36 18" stroke="rgba(255,255,255,0.6)" stroke-width="0.8" fill="none"/>
+  </g>
+  
+  <!-- Guardian emblem -->
+  <g transform="translate(24, 36)">
+    <circle cx="0" cy="0" r="6" fill="rgba(0,0,0,0.3)" opacity="0.5"/>
+    <circle cx="0" cy="0" r="5.5" fill="url(#metallic48)" filter="url(#innerShadow48)"/>
+    <text x="0" y="2" font-family="Arial, sans-serif" font-size="8" font-weight="900" text-anchor="middle" fill="#FFFFFF" filter="url(#glow48)">G</text>
+  </g>
+  
+  <!-- Holographic scan lines -->
+  <g opacity="0.3">
+    <line x1="8" y1="15" x2="40" y2="15" stroke="rgba(0,210,255,0.8)" stroke-width="0.5"/>
+    <line x1="8" y1="25" x2="40" y2="25" stroke="rgba(0,210,255,0.6)" stroke-width="0.5"/>
+    <line x1="8" y1="35" x2="40" y2="35" stroke="rgba(0,210,255,0.4)" stroke-width="0.5"/>
+  </g>
+</svg>

@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="shieldGradient128" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D2FF;stop-opacity:1" />
+      <stop offset="20%" style="stop-color:#3A7BD5;stop-opacity:1" />
+      <stop offset="60%" style="stop-color:#1E3A8A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0F172A;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="centerGlow128" cx="50%" cy="35%" r="70%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.9" />
+      <stop offset="50%" style="stop-color:#00D2FF;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0" />
+    </radialGradient>
+    <linearGradient id="metallic128" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" style="stop-color:#F8FAFC;stop-opacity:0.95" />
+      <stop offset="30%" style="stop-color:#E2E8F0;stop-opacity:0.8" />
+      <stop offset="70%" style="stop-color:#94A3B8;stop-opacity:0.7" />
+      <stop offset="100%" style="stop-color:#334155;stop-opacity:0.9" />
+    </linearGradient>
+    <linearGradient id="neuralGlow128" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00F5FF;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#00D2FF;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#0099CC;stop-opacity:0.6" />
+    </linearGradient>
+    <filter id="glow128" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadow128" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+    <filter id="innerShadow128" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="2"/>
+      <feGaussianBlur stdDeviation="2" result="offset-blur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.3"/>
+      <feComposite in2="offset-blur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="neuralGlow128" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Ambient background glow -->
+  <circle cx="64" cy="64" r="55" fill="rgba(0,210,255,0.08)" filter="url(#glow128)"/>
+  <circle cx="64" cy="64" r="45" fill="rgba(58,123,213,0.05)" opacity="0.8"/>
+  
+  <!-- Main shield structure -->
+  <path d="M64 5 L115 24 L115 80 L64 123 L13 80 L13 24 Z" fill="url(#shieldGradient128)" filter="url(#shadow128)"/>
+  
+  <!-- Shield border with premium metallic finish -->
+  <path d="M64 5 L115 24 L115 80 L64 123 L13 80 L13 24 Z" fill="none" stroke="url(#metallic128)" stroke-width="3" opacity="0.9"/>
+  
+  <!-- Inner shield highlight layer -->
+  <path d="M64 8 L110 26 L110 78 L64 118 L18 78 L18 26 Z" fill="url(#centerGlow128)" opacity="0.7"/>
+  
+  <!-- Advanced AI Neural Network Visualization -->
+  <g opacity="0.9">
+    <!-- Central AI Core -->
+    <circle cx="64" cy="50" r="8" fill="rgba(255,255,255,0.95)" stroke="url(#neuralGlow128)" stroke-width="2" filter="url(#neuralGlow128)"/>
+    <circle cx="64" cy="50" r="6" fill="url(#neuralGlow128)" opacity="0.8"/>
+    
+    <!-- Primary processing nodes -->
+    <circle cx="40" cy="70" r="6" fill="rgba(0,210,255,0.9)" stroke="rgba(255,255,255,0.8)" stroke-width="1.5" filter="url(#neuralGlow128)"/>
+    <circle cx="88" cy="70" r="6" fill="rgba(0,210,255,0.9)" stroke="rgba(255,255,255,0.8)" stroke-width="1.5" filter="url(#neuralGlow128)"/>
+    <circle cx="30" cy="40" r="5" fill="rgba(58,123,213,0.8)" stroke="rgba(255,255,255,0.7)" stroke-width="1"/>
+    <circle cx="98" cy="40" r="5" fill="rgba(58,123,213,0.8)" stroke="rgba(255,255,255,0.7)" stroke-width="1"/>
+    
+    <!-- Secondary nodes -->
+    <circle cx="25" cy="60" r="4" fill="rgba(30,58,138,0.8)" opacity="0.9"/>
+    <circle cx="103" cy="60" r="4" fill="rgba(30,58,138,0.8)" opacity="0.9"/>
+    <circle cx="50" cy="30" r="4" fill="rgba(30,58,138,0.8)" opacity="0.9"/>
+    <circle cx="78" cy="30" r="4" fill="rgba(30,58,138,0.8)" opacity="0.9"/>
+    
+    <!-- Neural network connections -->
+    <g stroke-width="2" fill="none">
+      <line x1="64" y1="58" x2="40" y2="64" stroke="url(#neuralGlow128)" opacity="0.9"/>
+      <line x1="64" y1="58" x2="88" y2="64" stroke="url(#neuralGlow128)" opacity="0.9"/>
+      <line x1="56" y1="45" x2="35" y2="40" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"/>
+      <line x1="72" y1="45" x2="93" y2="40" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"/>
+    </g>
+    
+    <!-- Secondary connections -->
+    <g stroke-width="1.5" fill="none" opacity="0.7">
+      <line x1="40" y1="76" x2="25" y2="64" stroke="rgba(0,210,255,0.8)"/>
+      <line x1="88" y1="76" x2="103" y2="64" stroke="rgba(0,210,255,0.8)"/>
+      <line x1="30" y1="35" x2="50" y2="26" stroke="rgba(255,255,255,0.7)"/>
+      <line x1="98" y1="35" x2="78" y2="26" stroke="rgba(255,255,255,0.7)"/>
+    </g>
+    
+    <!-- Data flow curves -->
+    <g fill="none" opacity="0.8">
+      <path d="M40 76 Q64 90 88 76" stroke="rgba(0,210,255,0.9)" stroke-width="2"/>
+      <path d="M30 35 Q64 20 98 35" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"/>
+      <path d="M25 64 Q64 85 103 64" stroke="rgba(58,123,213,0.7)" stroke-width="1.2"/>
+    </g>
+  </g>
+  
+  <!-- Premium Guardian emblem -->
+  <g transform="translate(64, 95)">
+    <circle cx="0" cy="0" r="12" fill="rgba(0,0,0,0.4)" opacity="0.6"/>
+    <circle cx="0" cy="0" r="11" fill="url(#metallic128)" filter="url(#innerShadow128)"/>
+    <circle cx="0" cy="0" r="9" fill="rgba(15,23,42,0.9)" opacity="0.8"/>
+    <text x="0" y="4" font-family="Arial, sans-serif" font-size="16" font-weight="900" text-anchor="middle" fill="#FFFFFF" filter="url(#glow128)">G</text>
+  </g>
+  
+  <!-- Holographic scan lines and effects -->
+  <g opacity="0.25">
+    <line x1="15" y1="35" x2="113" y2="35" stroke="rgba(0,210,255,0.9)" stroke-width="1"/>
+    <line x1="15" y1="50" x2="113" y2="50" stroke="rgba(0,210,255,0.7)" stroke-width="1"/>
+    <line x1="15" y1="65" x2="113" y2="65" stroke="rgba(0,210,255,0.5)" stroke-width="1"/>
+    <line x1="15" y1="80" x2="113" y2="80" stroke="rgba(0,210,255,0.3)" stroke-width="1"/>
+  </g>
+  
+  <!-- Particle effects -->
+  <g opacity="0.6">
+    <circle cx="20" cy="25" r="1.5" fill="rgba(0,245,255,0.8)" filter="url(#glow128)"/>
+    <circle cx="108" cy="30" r="1.2" fill="rgba(0,210,255,0.7)" filter="url(#glow128)"/>
+    <circle cx="25" cy="85" r="1" fill="rgba(58,123,213,0.6)" filter="url(#glow128)"/>
+    <circle cx="103" cy="90" r="1.3" fill="rgba(0,245,255,0.8)" filter="url(#glow128)"/>
+  </g>
+</svg>

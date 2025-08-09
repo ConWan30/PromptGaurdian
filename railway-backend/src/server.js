@@ -137,9 +137,11 @@ app.post('/auth/token', (req, res) => {
 const apiRoutes = require('./routes/api');
 const threatRoutes = require('./routes/threats');
 const proxyRoutes = require('./routes/proxy');
+const testApiRoutes = require('./routes/test-apis');
 
 // Temporarily disable authentication for immediate functionality
 app.use('/api/v1', apiRoutes);
+app.use('/api/test-apis', testApiRoutes);
 app.use('/threats', threatRoutes); 
 app.use('/proxy', proxyRoutes);
 

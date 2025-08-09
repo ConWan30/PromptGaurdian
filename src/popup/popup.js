@@ -807,20 +807,32 @@ class PromptGuardianPopup {
   }
 
   startPeriodicUpdates() {
-    // Update every 30 seconds
-    setInterval(() => {
-      if (this.currentTab === 'dashboard') {
-        this.loadDashboardMetrics();
-        this.loadActivityFeed();
-      } else if (this.currentTab === 'threats') {
-        this.loadThreatData();
+    // Reduce update frequency to prevent UI glitching - update every 2 minutes
+    this.updateInterval = setInterval(() => {
+      try {
+        if (this.isInitialized && document.visibilityState === 'visible') {
+          if (this.currentTab === 'dashboard') {
+            this.loadDashboardMetrics().catch(console.warn);
+            this.loadActivityFeed().catch(console.warn);
+          } else if (this.currentTab === 'threats') {
+            this.loadThreatData().catch(console.warn);
+          }
+        }
+      } catch (error) {
+        console.warn('[PopupUI] Periodic update failed:', error);
       }
-    }, 30000);
+    }, 120000); // 2 minutes instead of 30 seconds
     
-    // Test connections every 5 minutes
-    setInterval(() => {
-      this.testAllConnections();
-    }, 5 * 60 * 1000);
+    // Test connections less frequently - every 10 minutes
+    this.connectionInterval = setInterval(() => {
+      try {
+        if (this.isInitialized && document.visibilityState === 'visible') {
+          this.testAllConnections().catch(console.warn);
+        }
+      } catch (error) {
+        console.warn('[PopupUI] Connection test failed:', error);
+      }
+    }, 10 * 60 * 1000);
   }
 
   switchTab(tabName) {
@@ -1089,14 +1101,39 @@ class PromptGuardianPopup {
   }
 
   updateLastUpdateTime() {
-    document.getElementById('lastUpdate').textContent = 
-      'Last updated: ' + new Date().toLocaleTimeString();
+    const updateTime = () => {
+      const timeElement = document.getElementById('lastUpdate');
+      if (timeElement) {
+        timeElement.textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+      }
+    };
     
-    // Update every minute
-    setInterval(() => {
-      document.getElementById('lastUpdate').textContent = 
-        'Last updated: ' + new Date().toLocaleTimeString();
-    }, 60000);
+    updateTime();
+    
+    // Update every minute, but clear any existing interval first
+    if (this.timeInterval) {
+      clearInterval(this.timeInterval);
+    }
+    
+    this.timeInterval = setInterval(updateTime, 60000);
+  }
+
+  // Cleanup method to prevent memory leaks
+  cleanup() {
+    if (this.updateInterval) {
+      clearInterval(this.updateInterval);
+      this.updateInterval = null;
+    }
+    
+    if (this.connectionInterval) {
+      clearInterval(this.connectionInterval);
+      this.connectionInterval = null;
+    }
+    
+    if (this.timeInterval) {
+      clearInterval(this.timeInterval);
+      this.timeInterval = null;
+    }
   }
 
   // Utility methods
@@ -1141,4 +1178,18 @@ class PromptGuardianPopup {
 // Initialize popup when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   window.promptGuardianPopup = new PromptGuardianPopup();
+});
+
+// Cleanup when popup is closed/hidden
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && window.promptGuardianPopup) {
+    window.promptGuardianPopup.cleanup();
+  }
+});
+
+// Also cleanup on beforeunload
+window.addEventListener('beforeunload', () => {
+  if (window.promptGuardianPopup) {
+    window.promptGuardianPopup.cleanup();
+  }
 });

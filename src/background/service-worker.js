@@ -3,8 +3,8 @@
  * Central coordination hub for the 8-agent architecture with SPM protocol
  */
 
-// Import API client
-const { apiClient } = require('../services/api-client.js');
+// Import API client using dynamic import for service worker compatibility
+let apiClient = null;
 
 class PromptGuardianServiceWorker {
   constructor() {
@@ -33,6 +33,16 @@ class PromptGuardianServiceWorker {
 
   async init() {
     console.log('[ServiceWorker] Initializing PromptGuardian service worker');
+    
+    // Initialize API client
+    try {
+      const apiModule = await import('../services/api-client.js');
+      apiClient = apiModule.apiClient || new apiModule.PromptGuardianAPIClient();
+      this.apiClient = apiClient;
+    } catch (error) {
+      console.warn('[ServiceWorker] API client import failed, using fallback');
+      this.apiClient = this.createFallbackAPIClient();
+    }
     
     // Load settings
     await this.loadSettings();
@@ -848,6 +858,60 @@ class PromptGuardianServiceWorker {
   isSocialSite(hostname) {
     const socialSites = ['twitter.com', 'x.com', 'facebook.com', 'instagram.com'];
     return socialSites.some(site => hostname.includes(site));
+  }
+
+  // Fallback API client for when imports fail
+  createFallbackAPIClient() {
+    return {
+      railwayApiUrl: 'https://promptgaurdian-production.up.railway.app',
+      
+      async analyzeThreat(content, options = {}) {
+        try {
+          const response = await fetch(`${this.railwayApiUrl}/proxy/analyze-threat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content, context: options })
+          });
+          
+          if (response.ok) {
+            return await response.json();
+          } else {
+            throw new Error(`API returned ${response.status}`);
+          }
+        } catch (error) {
+          console.warn('[FallbackAPI] Remote analysis failed, using local patterns');
+          return this.localFallbackAnalysis(content, options);
+        }
+      },
+      
+      localFallbackAnalysis(content, options = {}) {
+        const patterns = [
+          { regex: /ignore.*previous.*instructions/i, score: 0.9, type: 'prompt_injection' },
+          { regex: /system.*prompt/i, score: 0.8, type: 'prompt_injection' },
+          { regex: /act.*as.*admin/i, score: 0.7, type: 'jailbreak' }
+        ];
+        
+        let maxScore = 0;
+        let detectedType = 'unknown';
+        
+        patterns.forEach(pattern => {
+          if (pattern.regex.test(content)) {
+            if (pattern.score > maxScore) {
+              maxScore = pattern.score;
+              detectedType = pattern.type;
+            }
+          }
+        });
+        
+        return {
+          threatScore: maxScore,
+          threatType: detectedType,
+          confidence: 0.5,
+          source: 'local_fallback',
+          timestamp: Date.now()
+        };
+      }
+    };
   }
 }
 

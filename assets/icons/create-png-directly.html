@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PromptGuardian PNG Creator</title>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #1e3a8a, #3730a3);
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            text-align: center; 
+        }
+        canvas { 
+            border: 2px solid #00d2ff; 
+            margin: 10px; 
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,210,255,0.3);
+        }
+        .download-btn { 
+            background: linear-gradient(135deg, #00D2FF, #3A7BD5);
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            border-radius: 12px; 
+            cursor: pointer;
+            font-weight: bold;
+            margin: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .download-btn:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,210,255,0.4);
+        }
+        .size-group {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 { text-align: center; margin-bottom: 30px; }
+        .status { 
+            margin: 10px 0; 
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(0,210,255,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ PromptGuardian PNG Generator</h1>
+        <div id="status" class="status">Loading...</div>
+        <div id="icons"></div>
+        <button class="download-btn" onclick="downloadAll()" style="font-size: 20px; padding: 20px 40px;">
+            🚀 DOWNLOAD ALL PNG ICONS
+        </button>
+    </div>
+
+    <script>
+        function createHighGradeIcon(canvas, size) {
+            const ctx = canvas.getContext('2d');
+            canvas.width = size;
+            canvas.height = size;
+            
+            // Enable high-quality rendering
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            // Clear canvas with transparency
+            ctx.clearRect(0, 0, size, size);
+            
+            // Create gradient for shield
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#00D2FF');
+            gradient.addColorStop(0.4, '#3A7BD5');
+            gradient.addColorStop(1, '#1E3A8A');
+            
+            // Shield coordinates scaled to size
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const shieldHeight = size * 0.9;
+            const shieldWidth = size * 0.75;
+            
+            // Draw shield shape
+            ctx.beginPath();
+            ctx.moveTo(centerX, size * 0.05); // Top point
+            ctx.lineTo(centerX + shieldWidth * 0.4, size * 0.2); // Top right
+            ctx.lineTo(centerX + shieldWidth * 0.4, size * 0.65); // Bottom right
+            ctx.lineTo(centerX, size * 0.95); // Bottom point
+            ctx.lineTo(centerX - shieldWidth * 0.4, size * 0.65); // Bottom left  
+            ctx.lineTo(centerX - shieldWidth * 0.4, size * 0.2); // Top left
+            ctx.closePath();
+            
+            // Add shadow
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.shadowBlur = size * 0.05;
+            ctx.shadowOffsetY = size * 0.02;
+            
+            // Fill shield with gradient
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            // Reset shadow
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+            
+            // Add border
+            ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+            ctx.lineWidth = Math.max(1, size / 32);
+            ctx.stroke();
+            
+            // Add AI neural network pattern
+            if (size >= 32) {
+                // Central node
+                ctx.beginPath();
+                ctx.arc(centerX, centerY * 0.8, size * 0.06, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                ctx.fill();
+                ctx.strokeStyle = '#00D2FF';
+                ctx.lineWidth = size * 0.02;
+                ctx.stroke();
+                
+                // Side nodes
+                const nodeSize = size * 0.04;
+                const nodeY = centerY * 1.1;
+                
+                // Left node
+                ctx.beginPath();
+                ctx.arc(centerX - size * 0.15, nodeY, nodeSize, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0,210,255,0.8)';
+                ctx.fill();
+                
+                // Right node  
+                ctx.beginPath();
+                ctx.arc(centerX + size * 0.15, nodeY, nodeSize, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0,210,255,0.8)';
+                ctx.fill();
+                
+                // Connection lines
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY * 0.8 + size * 0.06);
+                ctx.lineTo(centerX - size * 0.15, nodeY - nodeSize);
+                ctx.moveTo(centerX, centerY * 0.8 + size * 0.06);
+                ctx.lineTo(centerX + size * 0.15, nodeY - nodeSize);
+                ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+                ctx.lineWidth = Math.max(1, size / 64);
+                ctx.stroke();
+            }
+            
+            // Add "G" for Guardian
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = `bold ${size * 0.25}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('G', centerX, centerY * 1.4);
+            
+            // Add glow effect to G
+            ctx.shadowColor = 'rgba(0,210,255,0.8)';
+            ctx.shadowBlur = size * 0.02;
+            ctx.fillText('G', centerX, centerY * 1.4);
+            
+            // Reset shadow
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+        }
+        
+        function createIconSet() {
+            const sizes = [16, 32, 48, 128];
+            const iconsDiv = document.getElementById('icons');
+            
+            sizes.forEach(size => {
+                const group = document.createElement('div');
+                group.className = 'size-group';
+                
+                const title = document.createElement('h3');
+                title.textContent = `${size}x${size} Icon`;
+                group.appendChild(title);
+                
+                const canvas = document.createElement('canvas');
+                canvas.id = `canvas-${size}`;
+                canvas.style.width = `${Math.min(size * 2, 128)}px`;
+                canvas.style.height = `${Math.min(size * 2, 128)}px`;
+                
+                createHighGradeIcon(canvas, size);
+                group.appendChild(canvas);
+                
+                const btn = document.createElement('button');
+                btn.className = 'download-btn';
+                btn.textContent = `Download ${size}x${size} PNG`;
+                btn.onclick = () => downloadPNG(size);
+                group.appendChild(btn);
+                
+                iconsDiv.appendChild(group);
+            });
+            
+            document.getElementById('status').textContent = '✅ All icons generated successfully! High-grade PNG files ready for download.';
+        }
+        
+        function downloadPNG(size) {
+            const canvas = document.getElementById(`canvas-${size}`);
+            const link = document.createElement('a');
+            link.download = `icon-${size}.png`;
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            document.getElementById('status').textContent = `📥 Downloaded icon-${size}.png`;
+        }
+        
+        function downloadAll() {
+            const sizes = [16, 32, 48, 128];
+            sizes.forEach((size, index) => {
+                setTimeout(() => {
+                    downloadPNG(size);
+                    if (index === sizes.length - 1) {
+                        setTimeout(() => {
+                            document.getElementById('status').innerHTML = `
+                                🎉 <strong>ALL ICONS DOWNLOADED!</strong><br>
+                                Move all 4 PNG files to: C:\\Users\\Contr\\PromptGuardian\\assets\\icons\\<br>
+                                Then load the extension in Edge!
+                            `;
+                        }, 500);
+                    }
+                }, index * 300);
+            });
+        }
+        
+        // Initialize when page loads
+        window.onload = createIconSet;
+    </script>
+</body>
+</html>

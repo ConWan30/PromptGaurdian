@@ -1,0 +1,434 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Converter</title>
+    <style>
+        body { margin: 0; padding: 20px; background: #f0f0f0; }
+        #container { text-align: center; }
+        canvas { border: 2px solid #333; margin: 10px; }
+        .download-btn { 
+            background: linear-gradient(135deg, #00D2FF, #3A7BD5);
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 8px; 
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+        }
+        .download-btn:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h2>PromptGuardian High-Grade Icons</h2>
+        <div id="canvases"></div>
+        <button class="download-btn" onclick="downloadAll()">Download All PNG Icons</button>
+    </div>
+
+    <script>
+        const sizes = [16, 32, 48, 128];
+        const svgData = {
+            16: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <defs>
+    <linearGradient id="shieldGradient16" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D2FF;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#3A7BD5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E3A8A;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="innerGlow16" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0.2" />
+    </linearGradient>
+    <filter id="glow16">
+      <feGaussianBlur stdDeviation="0.5" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadow16" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Outer shield glow -->
+  <path d="M8 0.5 L14 3 L14 10 L8 15.5 L2 10 L2 3 Z" fill="url(#shieldGradient16)" filter="url(#shadow16)" opacity="0.9"/>
+  
+  <!-- Main shield -->
+  <path d="M8 1 L13.5 3.2 L13.5 9.8 L8 15 L2.5 9.8 L2.5 3.2 Z" fill="url(#shieldGradient16)" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+  
+  <!-- Inner highlight -->
+  <path d="M8 1.5 L12.8 3.5 L12.8 9.5 L8 14.2 L3.2 9.5 L3.2 3.5 Z" fill="url(#innerGlow16)" opacity="0.4"/>
+  
+  <!-- AI Circuit pattern -->
+  <g opacity="0.8" fill="none" stroke="rgba(255,255,255,0.9)" stroke-width="0.3">
+    <circle cx="8" cy="5" r="1" fill="rgba(255,255,255,0.9)"/>
+    <circle cx="6" cy="8" r="0.8" fill="rgba(0,210,255,0.8)"/>
+    <circle cx="10" cy="8" r="0.8" fill="rgba(0,210,255,0.8)"/>
+    <line x1="8" y1="6" x2="6" y2="7.2"/>
+    <line x1="8" y1="6" x2="10" y2="7.2"/>
+    <line x1="6" y1="8.8" x2="8" y2="11"/>
+    <line x1="10" y1="8.8" x2="8" y2="11"/>
+  </g>
+  
+  <!-- Center guardian symbol -->
+  <text x="8" y="12" font-family="Arial, sans-serif" font-size="3" font-weight="bold" text-anchor="middle" fill="#FFFFFF" opacity="0.95" filter="url(#glow16)">G</text>
+</svg>`,
+            32: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="shieldGradient32" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D2FF;stop-opacity:1" />
+      <stop offset="40%" style="stop-color:#3A7BD5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1E3A8A;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="centerGlow32" cx="50%" cy="35%" r="60%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0.1" />
+    </radialGradient>
+    <linearGradient id="metallic32" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" style="stop-color:#F8FAFC;stop-opacity:0.9" />
+      <stop offset="50%" style="stop-color:#94A3B8;stop-opacity:0.7" />
+      <stop offset="100%" style="stop-color:#334155;stop-opacity:0.8" />
+    </linearGradient>
+    <filter id="glow32" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadow32" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+  
+  <!-- Background glow -->
+  <circle cx="16" cy="16" r="14" fill="rgba(0,210,255,0.1)" filter="url(#glow32)"/>
+  
+  <!-- Main shield -->
+  <path d="M16 1.5 L28 6 L28 20 L16 30.5 L4 20 L4 6 Z" fill="url(#shieldGradient32)" filter="url(#shadow32)"/>
+  
+  <!-- Shield border -->
+  <path d="M16 1.5 L28 6 L28 20 L16 30.5 L4 20 L4 6 Z" fill="none" stroke="url(#metallic32)" stroke-width="1" opacity="0.8"/>
+  
+  <!-- Inner highlight -->
+  <path d="M16 3 L26.5 7 L26.5 19.5 L16 29 L5.5 19.5 L5.5 7 Z" fill="url(#centerGlow32)" opacity="0.5"/>
+  
+  <!-- AI Neural Network -->
+  <g opacity="0.85" stroke="rgba(255,255,255,0.9)" stroke-width="0.6" fill="none">
+    <!-- Central node -->
+    <circle cx="16" cy="13" r="2" fill="rgba(255,255,255,0.95)" stroke="rgba(0,210,255,1)" stroke-width="0.8"/>
+    
+    <!-- Secondary nodes -->
+    <circle cx="11" cy="19" r="1.5" fill="rgba(0,210,255,0.8)" stroke="rgba(255,255,255,0.7)"/>
+    <circle cx="21" cy="19" r="1.5" fill="rgba(0,210,255,0.8)" stroke="rgba(255,255,255,0.7)"/>
+    <circle cx="8" cy="11" r="1.2" fill="rgba(58,123,213,0.8)"/>
+    <circle cx="24" cy="11" r="1.2" fill="rgba(58,123,213,0.8)"/>
+    
+    <!-- Connections -->
+    <line x1="16" y1="15" x2="11" y2="17.5" stroke="rgba(0,210,255,0.9)" stroke-width="0.8"/>
+    <line x1="16" y1="15" x2="21" y2="17.5" stroke="rgba(0,210,255,0.9)" stroke-width="0.8"/>
+    <line x1="14" y1="12" x2="9.2" y2="11" stroke="rgba(255,255,255,0.7)"/>
+    <line x1="18" y1="12" x2="22.8" y2="11" stroke="rgba(255,255,255,0.7)"/>
+    
+    <!-- Data flow -->
+    <path d="M11 20.5 Q16 24 21 20.5" stroke="rgba(0,210,255,0.7)" stroke-width="0.8" fill="none"/>
+  </g>
+  
+  <!-- Guardian emblem -->
+  <g transform="translate(16, 24)">
+    <circle cx="0" cy="0" r="4" fill="rgba(0,0,0,0.3)" opacity="0.5"/>
+    <circle cx="0" cy="0" r="3.5" fill="url(#metallic32)"/>
+    <text x="0" y="1.5" font-family="Arial, sans-serif" font-size="5" font-weight="900" text-anchor="middle" fill="#FFFFFF" filter="url(#glow32)">G</text>
+  </g>
+  
+  <!-- Scan lines -->
+  <g opacity="0.3">
+    <line x1="6" y1="10" x2="26" y2="10" stroke="rgba(0,210,255,0.8)" stroke-width="0.4"/>
+    <line x1="6" y1="16" x2="26" y2="16" stroke="rgba(0,210,255,0.6)" stroke-width="0.4"/>
+    <line x1="6" y1="22" x2="26" y2="22" stroke="rgba(0,210,255,0.4)" stroke-width="0.4"/>
+  </g>
+</svg>`,
+            48: `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="shieldGradient48" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D2FF;stop-opacity:1" />
+      <stop offset="25%" style="stop-color:#3A7BD5;stop-opacity:1" />
+      <stop offset="75%" style="stop-color:#1E3A8A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0F172A;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="centerGlow48" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0" />
+    </radialGradient>
+    <linearGradient id="metallic48" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#E5E7EB;stop-opacity:0.9" />
+      <stop offset="50%" style="stop-color:#9CA3AF;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#374151;stop-opacity:0.8" />
+    </linearGradient>
+    <filter id="glow48" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadow48" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+    <filter id="innerShadow48" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="1"/>
+      <feGaussianBlur stdDeviation="1" result="offset-blur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.2"/>
+      <feComposite in2="offset-blur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background circular glow -->
+  <circle cx="24" cy="24" r="20" fill="rgba(0,210,255,0.1)" filter="url(#glow48)"/>
+  
+  <!-- Main shield body -->
+  <path d="M24 2 L42 9 L42 30 L24 46 L6 30 L6 9 Z" fill="url(#shieldGradient48)" filter="url(#shadow48)"/>
+  
+  <!-- Shield border with metallic finish -->
+  <path d="M24 2 L42 9 L42 30 L24 46 L6 30 L6 9 Z" fill="none" stroke="url(#metallic48)" stroke-width="1.5" opacity="0.8"/>
+  
+  <!-- Inner shield highlight -->
+  <path d="M24 4 L40 10.5 L40 29 L24 43.5 L8 29 L8 10.5 Z" fill="url(#centerGlow48)" opacity="0.6"/>
+  
+  <!-- Advanced AI Neural Network Pattern -->
+  <g opacity="0.85" stroke="rgba(255,255,255,0.9)" stroke-width="0.8" fill="none">
+    <!-- Central processing node -->
+    <circle cx="24" cy="20" r="3" fill="rgba(255,255,255,0.95)" stroke="rgba(0,210,255,1)" stroke-width="1"/>
+    
+    <!-- Secondary nodes -->
+    <circle cx="16" cy="28" r="2.5" fill="rgba(0,210,255,0.8)" stroke="rgba(255,255,255,0.7)"/>
+    <circle cx="32" cy="28" r="2.5" fill="rgba(0,210,255,0.8)" stroke="rgba(255,255,255,0.7)"/>
+    <circle cx="12" cy="16" r="2" fill="rgba(58,123,213,0.8)"/>
+    <circle cx="36" cy="16" r="2" fill="rgba(58,123,213,0.8)"/>
+    
+    <!-- Neural connections -->
+    <line x1="24" y1="23" x2="16" y2="25.5" stroke="rgba(0,210,255,0.9)" stroke-width="1"/>
+    <line x1="24" y1="23" x2="32" y2="25.5" stroke="rgba(0,210,255,0.9)" stroke-width="1"/>
+    <line x1="21" y1="18" x2="14" y2="16" stroke="rgba(255,255,255,0.7)"/>
+    <line x1="27" y1="18" x2="34" y2="16" stroke="rgba(255,255,255,0.7)"/>
+    
+    <!-- Data flow lines -->
+    <path d="M16 30.5 Q24 35 32 30.5" stroke="rgba(0,210,255,0.7)" stroke-width="1" fill="none"/>
+    <path d="M12 18 Q24 12 36 18" stroke="rgba(255,255,255,0.6)" stroke-width="0.8" fill="none"/>
+  </g>
+  
+  <!-- Guardian emblem -->
+  <g transform="translate(24, 36)">
+    <circle cx="0" cy="0" r="6" fill="rgba(0,0,0,0.3)" opacity="0.5"/>
+    <circle cx="0" cy="0" r="5.5" fill="url(#metallic48)" filter="url(#innerShadow48)"/>
+    <text x="0" y="2" font-family="Arial, sans-serif" font-size="8" font-weight="900" text-anchor="middle" fill="#FFFFFF" filter="url(#glow48)">G</text>
+  </g>
+  
+  <!-- Holographic scan lines -->
+  <g opacity="0.3">
+    <line x1="8" y1="15" x2="40" y2="15" stroke="rgba(0,210,255,0.8)" stroke-width="0.5"/>
+    <line x1="8" y1="25" x2="40" y2="25" stroke="rgba(0,210,255,0.6)" stroke-width="0.5"/>
+    <line x1="8" y1="35" x2="40" y2="35" stroke="rgba(0,210,255,0.4)" stroke-width="0.5"/>
+  </g>
+</svg>`,
+            128: `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="shieldGradient128" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00D2FF;stop-opacity:1" />
+      <stop offset="20%" style="stop-color:#3A7BD5;stop-opacity:1" />
+      <stop offset="60%" style="stop-color:#1E3A8A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0F172A;stop-opacity:1" />
+    </linearGradient>
+    <radialGradient id="centerGlow128" cx="50%" cy="35%" r="70%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.9" />
+      <stop offset="50%" style="stop-color:#00D2FF;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#FFFFFF;stop-opacity:0" />
+    </radialGradient>
+    <linearGradient id="metallic128" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" style="stop-color:#F8FAFC;stop-opacity:0.95" />
+      <stop offset="30%" style="stop-color:#E2E8F0;stop-opacity:0.8" />
+      <stop offset="70%" style="stop-color:#94A3B8;stop-opacity:0.7" />
+      <stop offset="100%" style="stop-color:#334155;stop-opacity:0.9" />
+    </linearGradient>
+    <linearGradient id="neuralGlow128" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00F5FF;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#00D2FF;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#0099CC;stop-opacity:0.6" />
+    </linearGradient>
+    <filter id="glow128" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadow128" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+    <filter id="innerShadow128" x="-50%" y="-50%" width="200%" height="200%">
+      <feOffset dx="0" dy="2"/>
+      <feGaussianBlur stdDeviation="2" result="offset-blur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.3"/>
+      <feComposite in2="offset-blur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="neuralGlow128" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1.5" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Ambient background glow -->
+  <circle cx="64" cy="64" r="55" fill="rgba(0,210,255,0.08)" filter="url(#glow128)"/>
+  <circle cx="64" cy="64" r="45" fill="rgba(58,123,213,0.05)" opacity="0.8"/>
+  
+  <!-- Main shield structure -->
+  <path d="M64 5 L115 24 L115 80 L64 123 L13 80 L13 24 Z" fill="url(#shieldGradient128)" filter="url(#shadow128)"/>
+  
+  <!-- Shield border with premium metallic finish -->
+  <path d="M64 5 L115 24 L115 80 L64 123 L13 80 L13 24 Z" fill="none" stroke="url(#metallic128)" stroke-width="3" opacity="0.9"/>
+  
+  <!-- Inner shield highlight layer -->
+  <path d="M64 8 L110 26 L110 78 L64 118 L18 78 L18 26 Z" fill="url(#centerGlow128)" opacity="0.7"/>
+  
+  <!-- Advanced AI Neural Network Visualization -->
+  <g opacity="0.9">
+    <!-- Central AI Core -->
+    <circle cx="64" cy="50" r="8" fill="rgba(255,255,255,0.95)" stroke="url(#neuralGlow128)" stroke-width="2" filter="url(#neuralGlow128)"/>
+    <circle cx="64" cy="50" r="6" fill="url(#neuralGlow128)" opacity="0.8"/>
+    
+    <!-- Primary processing nodes -->
+    <circle cx="40" cy="70" r="6" fill="rgba(0,210,255,0.9)" stroke="rgba(255,255,255,0.8)" stroke-width="1.5" filter="url(#neuralGlow128)"/>
+    <circle cx="88" cy="70" r="6" fill="rgba(0,210,255,0.9)" stroke="rgba(255,255,255,0.8)" stroke-width="1.5" filter="url(#neuralGlow128)"/>
+    <circle cx="30" cy="40" r="5" fill="rgba(58,123,213,0.8)" stroke="rgba(255,255,255,0.7)" stroke-width="1"/>
+    <circle cx="98" cy="40" r="5" fill="rgba(58,123,213,0.8)" stroke="rgba(255,255,255,0.7)" stroke-width="1"/>
+    
+    <!-- Secondary nodes -->
+    <circle cx="25" cy="60" r="4" fill="rgba(30,58,138,0.8)" opacity="0.9"/>
+    <circle cx="103" cy="60" r="4" fill="rgba(30,58,138,0.8)" opacity="0.9"/>
+    <circle cx="50" cy="30" r="4" fill="rgba(30,58,138,0.8)" opacity="0.9"/>
+    <circle cx="78" cy="30" r="4" fill="rgba(30,58,138,0.8)" opacity="0.9"/>
+    
+    <!-- Neural network connections -->
+    <g stroke-width="2" fill="none">
+      <line x1="64" y1="58" x2="40" y2="64" stroke="url(#neuralGlow128)" opacity="0.9"/>
+      <line x1="64" y1="58" x2="88" y2="64" stroke="url(#neuralGlow128)" opacity="0.9"/>
+      <line x1="56" y1="45" x2="35" y2="40" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"/>
+      <line x1="72" y1="45" x2="93" y2="40" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"/>
+    </g>
+    
+    <!-- Secondary connections -->
+    <g stroke-width="1.5" fill="none" opacity="0.7">
+      <line x1="40" y1="76" x2="25" y2="64" stroke="rgba(0,210,255,0.8)"/>
+      <line x1="88" y1="76" x2="103" y2="64" stroke="rgba(0,210,255,0.8)"/>
+      <line x1="30" y1="35" x2="50" y2="26" stroke="rgba(255,255,255,0.7)"/>
+      <line x1="98" y1="35" x2="78" y2="26" stroke="rgba(255,255,255,0.7)"/>
+    </g>
+    
+    <!-- Data flow curves -->
+    <g fill="none" opacity="0.8">
+      <path d="M40 76 Q64 90 88 76" stroke="rgba(0,210,255,0.9)" stroke-width="2"/>
+      <path d="M30 35 Q64 20 98 35" stroke="rgba(255,255,255,0.8)" stroke-width="1.5"/>
+      <path d="M25 64 Q64 85 103 64" stroke="rgba(58,123,213,0.7)" stroke-width="1.2"/>
+    </g>
+  </g>
+  
+  <!-- Premium Guardian emblem -->
+  <g transform="translate(64, 95)">
+    <circle cx="0" cy="0" r="12" fill="rgba(0,0,0,0.4)" opacity="0.6"/>
+    <circle cx="0" cy="0" r="11" fill="url(#metallic128)" filter="url(#innerShadow128)"/>
+    <circle cx="0" cy="0" r="9" fill="rgba(15,23,42,0.9)" opacity="0.8"/>
+    <text x="0" y="4" font-family="Arial, sans-serif" font-size="16" font-weight="900" text-anchor="middle" fill="#FFFFFF" filter="url(#glow128)">G</text>
+  </g>
+  
+  <!-- Holographic scan lines and effects -->
+  <g opacity="0.25">
+    <line x1="15" y1="35" x2="113" y2="35" stroke="rgba(0,210,255,0.9)" stroke-width="1"/>
+    <line x1="15" y1="50" x2="113" y2="50" stroke="rgba(0,210,255,0.7)" stroke-width="1"/>
+    <line x1="15" y1="65" x2="113" y2="65" stroke="rgba(0,210,255,0.5)" stroke-width="1"/>
+    <line x1="15" y1="80" x2="113" y2="80" stroke="rgba(0,210,255,0.3)" stroke-width="1"/>
+  </g>
+  
+  <!-- Particle effects -->
+  <g opacity="0.6">
+    <circle cx="20" cy="25" r="1.5" fill="rgba(0,245,255,0.8)" filter="url(#glow128)"/>
+    <circle cx="108" cy="30" r="1.2" fill="rgba(0,210,255,0.7)" filter="url(#glow128)"/>
+    <circle cx="25" cy="85" r="1" fill="rgba(58,123,213,0.6)" filter="url(#glow128)"/>
+    <circle cx="103" cy="90" r="1.3" fill="rgba(0,245,255,0.8)" filter="url(#glow128)"/>
+  </g>
+</svg>`
+        };
+
+        function createCanvas(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            canvas.id = `canvas-${size}`;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            const img = new Image();
+            const svgBlob = new Blob([svgData[size]], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(svgBlob);
+            
+            img.onload = function() {
+                ctx.clearRect(0, 0, size, size);
+                ctx.drawImage(img, 0, 0, size, size);
+                URL.revokeObjectURL(url);
+                
+                // Add download button for this size
+                const btn = document.createElement('button');
+                btn.className = 'download-btn';
+                btn.textContent = `Download ${size}x${size} PNG`;
+                btn.onclick = () => downloadPNG(size);
+                document.getElementById('canvases').appendChild(btn);
+            };
+            
+            img.src = url;
+            return canvas;
+        }
+
+        function downloadPNG(size) {
+            const canvas = document.getElementById(`canvas-${size}`);
+            const link = document.createElement('a');
+            link.download = `icon-${size}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        function downloadAll() {
+            sizes.forEach((size, index) => {
+                setTimeout(() => downloadPNG(size), index * 500);
+            });
+        }
+
+        // Initialize canvases
+        window.onload = function() {
+            const container = document.getElementById('canvases');
+            sizes.forEach(size => {
+                const canvas = createCanvas(size);
+                const div = document.createElement('div');
+                div.appendChild(document.createTextNode(`${size}x${size}:`));
+                div.appendChild(document.createElement('br'));
+                div.appendChild(canvas);
+                container.appendChild(div);
+            });
+        };
+    </script>
+</body>
+</html>
